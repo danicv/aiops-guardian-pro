@@ -161,6 +161,12 @@ Terraform under `infra/terraform` provisions the Azure foundation. Kubernetes ma
 
 See `docs/deployment-azure.md`.
 
+## Google Kubernetes Engine
+
+The GitHub Actions workflow under `.github/workflows/deploy-gke.yml` uses Terraform to provision GKE Autopilot, networking, Artifact Registry, IAM and Secret Manager, then deploys the frontend, backend, MCP bridge, and persistent PostgreSQL through a Terraform-managed Helm release.
+
+See `docs/deployment-gcp.md` for the one-time Google Cloud and GitHub setup.
+
 ## Production hardening
 
 This is a capstone/reference implementation. Before client production use, add organization-specific Entra token validation, signed single-use approval links, HA managed PostgreSQL, private endpoints/WAF, secret rotation, production-grade MCP authorization, full integration OAuth flows, security testing, and model/prompt governance.
