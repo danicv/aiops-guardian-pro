@@ -1,0 +1,9 @@
+.env
+.venv/
+gha-creds-*.json
+**/__pycache__/
+*.py[cod]
+node_modules/
+frontend/dist/
+.DS_Store
+

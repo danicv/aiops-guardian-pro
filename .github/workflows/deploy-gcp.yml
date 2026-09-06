@@ -1,0 +1,130 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-gcp-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: project-bc255d91-89ae-4e6d-b82
+  REGION: us-central1
+  ARTIFACT_REPOSITORY: aiops-guardian-pro
+  MCP_SERVICE: aiops-guardian-mcp
+  BACKEND_SERVICE: aiops-guardian-api
+  FRONTEND_SERVICE: aiops-guardian-web
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate project
+        run: python scripts/validate_project.py
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker authentication
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Define image names
+        run: |
+          registry="${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REPOSITORY}"
+          echo "MCP_IMAGE=${registry}/mcp:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "BACKEND_IMAGE=${registry}/backend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=${registry}/frontend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Build and push MCP image
+        run: |
+          docker build --file mcp-server/Dockerfile --tag "$MCP_IMAGE" .
+          docker push "$MCP_IMAGE"
+
+      - name: Deploy MCP service
+        run: |
+          gcloud run deploy "$MCP_SERVICE" \
+            --project "$PROJECT_ID" \
+            --region "$REGION" \
+            --image "$MCP_IMAGE" \
+            --port 8001 \
+            --allow-unauthenticated \
+            --quiet
+          mcp_url="$(gcloud run services describe "$MCP_SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')"
+          echo "MCP_URL=${mcp_url}" >> "$GITHUB_ENV"
+
+      - name: Build and push backend image
+        run: |
+          docker build --file backend/Dockerfile --tag "$BACKEND_IMAGE" .
+          docker push "$BACKEND_IMAGE"
+
+      - name: Deploy backend service
+        run: |
+          gcloud run deploy "$BACKEND_SERVICE" \
+            --project "$PROJECT_ID" \
+            --region "$REGION" \
+            --image "$BACKEND_IMAGE" \
+            --port 8000 \
+            --allow-unauthenticated \
+            --set-env-vars "APP_ENV=production,DEMO_MODE=true,DATABASE_URL=sqlite:////tmp/guardian.db,FAISS_PATH=/tmp/faiss,MCP_SERVER_URL=${MCP_URL}" \
+            --quiet
+          backend_url="$(gcloud run services describe "$BACKEND_SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')"
+          echo "BACKEND_URL=${backend_url}" >> "$GITHUB_ENV"
+
+      - name: Build and push frontend image
+        run: |
+          docker build \
+            --file frontend/Dockerfile \
+            --build-arg "VITE_API_BASE_URL=${BACKEND_URL}" \
+            --tag "$FRONTEND_IMAGE" \
+            frontend
+          docker push "$FRONTEND_IMAGE"
+
+      - name: Deploy frontend service
+        run: |
+          gcloud run deploy "$FRONTEND_SERVICE" \
+            --project "$PROJECT_ID" \
+            --region "$REGION" \
+            --image "$FRONTEND_IMAGE" \
+            --port 80 \
+            --allow-unauthenticated \
+            --quiet
+          frontend_url="$(gcloud run services describe "$FRONTEND_SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')"
+          echo "FRONTEND_URL=${frontend_url}" >> "$GITHUB_ENV"
+
+      - name: Configure backend public URL and CORS
+        run: |
+          gcloud run services update "$BACKEND_SERVICE" \
+            --project "$PROJECT_ID" \
+            --region "$REGION" \
+            --update-env-vars "APP_BASE_URL=${FRONTEND_URL},CORS_ORIGINS=${FRONTEND_URL}" \
+            --quiet
+
+      - name: Verify deployment
+        run: |
+          curl --fail --retry 10 --retry-delay 5 "${MCP_URL}/healthz"
+          curl --fail --retry 10 --retry-delay 5 "${BACKEND_URL}/"
+          curl --fail --retry 10 --retry-delay 5 "${FRONTEND_URL}/"
+          {
+            echo "### Cloud Run deployment"
+            echo "- Frontend: ${FRONTEND_URL}"
+            echo "- Backend: ${BACKEND_URL}"
+            echo "- MCP: ${MCP_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"

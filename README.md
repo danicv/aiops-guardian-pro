@@ -161,6 +161,12 @@ Terraform under `infra/terraform` provisions the Azure foundation. Kubernetes ma
 
 See `docs/deployment-azure.md`.
 
+## Google Cloud Run
+
+The GitHub Actions workflow under `.github/workflows/deploy-gcp.yml` builds the frontend, backend, and MCP bridge, publishes their images to Artifact Registry, and deploys them to Cloud Run using keyless Workload Identity Federation.
+
+See `docs/deployment-gcp.md` for the one-time Google Cloud and GitHub setup.
+
 ## Production hardening
 
 This is a capstone/reference implementation. Before client production use, add organization-specific Entra token validation, signed single-use approval links, HA managed PostgreSQL, private endpoints/WAF, secret rotation, production-grade MCP authorization, full integration OAuth flows, security testing, and model/prompt governance.
