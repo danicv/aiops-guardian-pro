@@ -96,8 +96,10 @@ resource "helm_release" "guardian" {
   namespace        = local.namespace
   chart            = "${path.module}/../../deploy/helm/aiops-guardian"
   create_namespace = true
-  wait             = true
-  timeout          = 600
+  # Kubernetes rollout checks and diagnostics are handled by GitHub Actions.
+  # Waiting here hides pod events behind a generic Helm timeout.
+  wait    = false
+  timeout = 600
   values = [yamlencode({
     projectId = var.project_id
     images = {

@@ -84,6 +84,15 @@ jobs:
             gcloud secrets versions describe latest --secret="$secret" --project="$PROJECT_ID" >/dev/null
           done
 
+      - name: Configure GKE access
+        run: gcloud container clusters get-credentials "$CLUSTER_NAME" --region "$REGION" --project "$PROJECT_ID"
+
+      - name: Remove an incomplete Helm release
+        run: |
+          if [ "$(helm status aiops-guardian -n aiops-guardian -o json 2>/dev/null | jq -r '.info.status // empty')" = "failed" ]; then
+            helm uninstall aiops-guardian -n aiops-guardian --wait
+          fi
+
       - name: Deploy workloads with Terraform and Helm
         working-directory: ${{ env.TF_DIR }}
         env:
@@ -97,7 +106,7 @@ jobs:
 
       - name: Verify GKE rollout
         run: |
-          gcloud container clusters get-credentials "$CLUSTER_NAME" --region "$REGION" --project "$PROJECT_ID"
+          kubectl rollout status statefulset/postgres -n aiops-guardian --timeout=5m
           kubectl rollout status deployment/guardian-mcp -n aiops-guardian --timeout=5m
           kubectl rollout status deployment/guardian-backend -n aiops-guardian --timeout=5m
           kubectl rollout status deployment/guardian-frontend -n aiops-guardian --timeout=5m
@@ -110,3 +119,13 @@ jobs:
           kubectl get ingress guardian -n aiops-guardian
           echo "### GKE deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "Frontend/API: http://${address}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Diagnose failed GKE rollout
+        if: failure()
+        run: |
+          kubectl get pods,pvc,services,ingress -n aiops-guardian -o wide || true
+          kubectl get events -n aiops-guardian --sort-by='.lastTimestamp' || true
+          kubectl describe pods -n aiops-guardian || true
+          for pod in $(kubectl get pods -n aiops-guardian -o name 2>/dev/null); do
+            kubectl logs -n aiops-guardian "$pod" --all-containers --tail=100 || true
+          done
