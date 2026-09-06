@@ -1,6 +1,6 @@
 # GCP deployment: Terraform, GKE, and Secret Manager
 
-The GitHub workflow provisions and deploys the complete application to a GKE Autopilot cluster in `us-central1`. Terraform owns the VPC, subnet, GKE cluster, Artifact Registry, Secret Manager containers, IAM access, and Helm release. The frontend and `/api` share one GKE ingress.
+The GitHub workflow provisions and deploys the complete application to a GKE Autopilot cluster in `us-east1`. Terraform owns the VPC, subnet, GKE cluster, Artifact Registry, Secret Manager containers, IAM access, and Helm release. The frontend and `/api` share one GKE ingress.
 
 Secret values are never passed to Terraform or stored in GitHub. GKE Workload Identity and the managed Secret Manager CSI add-on mount them directly into the backend and PostgreSQL pods.
 

@@ -15,7 +15,7 @@ permissions:
 
 env:
   PROJECT_ID: project-bc255d91-89ae-4e6d-b82
-  REGION: us-central1
+  REGION: us-east1
   CLUSTER_NAME: aiops-guardian
   REPOSITORY: aiops-guardian-pro
   TF_DIR: infra/gcp
