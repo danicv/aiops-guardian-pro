@@ -1,0 +1,112 @@
+name: Terraform and deploy to GKE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: gke-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: project-bc255d91-89ae-4e6d-b82
+  REGION: us-central1
+  CLUSTER_NAME: aiops-guardian
+  REPOSITORY: aiops-guardian-pro
+  TF_DIR: infra/gcp
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate source
+        run: python scripts/validate_project.py
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          install_components: gke-gcloud-auth-plugin
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Provision GCP infrastructure
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_project_id: ${{ env.PROJECT_ID }}
+        run: |
+          terraform init -backend-config="bucket=${PROJECT_ID}-terraform-state"
+          terraform fmt -check -recursive
+          terraform validate
+          terraform apply -auto-approve -var="deploy_workloads=false" \
+            -target=google_artifact_registry_repository.main \
+            -target=google_container_cluster.main \
+            -target=google_secret_manager_secret.app \
+            -target=google_secret_manager_secret_iam_member.backend \
+            -target=google_secret_manager_secret_iam_member.postgres
+
+      - name: Configure Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Build and push images
+        run: |
+          registry="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}"
+          mcp_image="${registry}/mcp:${GITHUB_SHA}"
+          backend_image="${registry}/backend:${GITHUB_SHA}"
+          frontend_image="${registry}/frontend:${GITHUB_SHA}"
+          docker build -f mcp-server/Dockerfile -t "$mcp_image" .
+          docker build -f backend/Dockerfile -t "$backend_image" .
+          docker build -f frontend/Dockerfile --build-arg VITE_API_BASE_URL= -t "$frontend_image" frontend
+          docker push "$mcp_image"
+          docker push "$backend_image"
+          docker push "$frontend_image"
+          echo "MCP_IMAGE=${mcp_image}" >> "$GITHUB_ENV"
+          echo "BACKEND_IMAGE=${backend_image}" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=${frontend_image}" >> "$GITHUB_ENV"
+
+      - name: Verify required Secret Manager versions exist
+        run: |
+          for secret in database-password openai-api-key smtp-username smtp-password; do
+            gcloud secrets versions describe latest --secret="$secret" --project="$PROJECT_ID" >/dev/null
+          done
+
+      - name: Deploy workloads with Terraform and Helm
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_project_id: ${{ env.PROJECT_ID }}
+        run: |
+          terraform apply -auto-approve \
+            -var="deploy_workloads=true" \
+            -var="mcp_image=${MCP_IMAGE}" \
+            -var="backend_image=${BACKEND_IMAGE}" \
+            -var="frontend_image=${FRONTEND_IMAGE}"
+
+      - name: Verify GKE rollout
+        run: |
+          gcloud container clusters get-credentials "$CLUSTER_NAME" --region "$REGION" --project "$PROJECT_ID"
+          kubectl rollout status deployment/guardian-mcp -n aiops-guardian --timeout=5m
+          kubectl rollout status deployment/guardian-backend -n aiops-guardian --timeout=5m
+          kubectl rollout status deployment/guardian-frontend -n aiops-guardian --timeout=5m
+          for attempt in $(seq 1 60); do
+            address="$(kubectl get ingress guardian -n aiops-guardian -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+            [ -n "$address" ] && break
+            sleep 10
+          done
+          [ -n "$address" ]
+          kubectl get ingress guardian -n aiops-guardian
+          echo "### GKE deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "Frontend/API: http://${address}" >> "$GITHUB_STEP_SUMMARY"

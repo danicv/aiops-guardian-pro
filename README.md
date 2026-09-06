@@ -161,9 +161,9 @@ Terraform under `infra/terraform` provisions the Azure foundation. Kubernetes ma
 
 See `docs/deployment-azure.md`.
 
-## Google Cloud Run
+## Google Kubernetes Engine
 
-The GitHub Actions workflow under `.github/workflows/deploy-gcp.yml` builds the frontend, backend, and MCP bridge, publishes their images to Artifact Registry, and deploys them to Cloud Run using keyless Workload Identity Federation.
+The GitHub Actions workflow under `.github/workflows/deploy-gke.yml` uses Terraform to provision GKE Autopilot, networking, Artifact Registry, IAM and Secret Manager, then deploys the frontend, backend, MCP bridge, and persistent PostgreSQL through a Terraform-managed Helm release.
 
 See `docs/deployment-gcp.md` for the one-time Google Cloud and GitHub setup.
 

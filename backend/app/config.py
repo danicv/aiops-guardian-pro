@@ -1,4 +1,20 @@
+import os
+from pathlib import Path
+from urllib.parse import quote_plus
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+def load_mounted_secrets(path: str = "/var/secrets") -> None:
+    secret_dir = Path(path)
+    if not secret_dir.is_dir():
+        return
+    for secret_file in secret_dir.iterdir():
+        if secret_file.is_file() and secret_file.name not in os.environ:
+            os.environ[secret_file.name] = secret_file.read_text(encoding="utf-8").strip()
+    if "DATABASE_URL" not in os.environ and os.environ.get("DATABASE_PASSWORD"):
+        password = quote_plus(os.environ["DATABASE_PASSWORD"])
+        os.environ["DATABASE_URL"] = f"postgresql+psycopg2://guardian:{password}@postgres:5432/guardian"
+
+load_mounted_secrets()
 
 class Settings(BaseSettings):
     app_env: str = "local"

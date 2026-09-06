@@ -1,0 +1,211 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guardian-backend
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guardian-postgres
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guardian-mcp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: guardian-mcp-read
+rules:
+  - apiGroups: ["", "apps"]
+    resources: ["pods", "pods/log", "events", "services", "deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: guardian-mcp-read
+subjects:
+  - kind: ServiceAccount
+    name: guardian-mcp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: guardian-mcp-read
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: guardian-app-secrets
+spec:
+  provider: gke
+  parameters:
+    secrets: |
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/database-password/versions/latest"
+        path: "DATABASE_PASSWORD"
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/openai-api-key/versions/latest"
+        path: "OPENAI_API_KEY"
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/smtp-username/versions/latest"
+        path: "SMTP_USERNAME"
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/smtp-password/versions/latest"
+        path: "SMTP_PASSWORD"
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: guardian-database-secret
+spec:
+  provider: gke
+  parameters:
+    secrets: |
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/database-password/versions/latest"
+        path: "password"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: {matchLabels: {app: postgres}}
+  template:
+    metadata: {labels: {app: postgres}}
+    spec:
+      serviceAccountName: guardian-postgres
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - {name: POSTGRES_DB, value: guardian}
+            - {name: POSTGRES_USER, value: guardian}
+            - {name: POSTGRES_PASSWORD_FILE, value: /var/secrets/password}
+          ports: [{containerPort: 5432}]
+          readinessProbe:
+            exec: {command: ["sh", "-c", "pg_isready -U guardian"]}
+            initialDelaySeconds: 5
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+            - {name: secrets, mountPath: /var/secrets, readOnly: true}
+      volumes:
+        - name: secrets
+          csi:
+            driver: secrets-store-gke.csi.k8s.io
+            readOnly: true
+            volumeAttributes: {secretProviderClass: guardian-database-secret}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 10Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: postgres}
+spec:
+  selector: {app: postgres}
+  ports: [{port: 5432, targetPort: 5432}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: guardian-mcp}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: guardian-mcp}}
+  template:
+    metadata: {labels: {app: guardian-mcp}}
+    spec:
+      serviceAccountName: guardian-mcp
+      containers:
+        - name: mcp
+          image: {{ .Values.images.mcp | quote }}
+          ports: [{containerPort: 8001}]
+          readinessProbe: {httpGet: {path: /healthz, port: 8001}, initialDelaySeconds: 5}
+          resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: 500m, memory: 512Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: guardian-mcp}
+spec:
+  selector: {app: guardian-mcp}
+  ports: [{port: 8001, targetPort: 8001}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: guardian-backend}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: guardian-backend}}
+  template:
+    metadata: {labels: {app: guardian-backend}}
+    spec:
+      serviceAccountName: guardian-backend
+      containers:
+        - name: backend
+          image: {{ .Values.images.backend | quote }}
+          ports: [{containerPort: 8000}]
+          env:
+            - {name: APP_ENV, value: production}
+            - {name: DEMO_MODE, value: "false"}
+            - {name: MCP_SERVER_URL, value: "http://guardian-mcp:8001"}
+            - {name: CORS_ORIGINS, value: "*"}
+          readinessProbe: {httpGet: {path: /api/healthz, port: 8000}, initialDelaySeconds: 10}
+          resources: {requests: {cpu: 250m, memory: 512Mi}, limits: {cpu: "1", memory: 1Gi}}
+          volumeMounts: [{name: secrets, mountPath: /var/secrets, readOnly: true}]
+      volumes:
+        - name: secrets
+          csi:
+            driver: secrets-store-gke.csi.k8s.io
+            readOnly: true
+            volumeAttributes: {secretProviderClass: guardian-app-secrets}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guardian-backend
+  annotations: {cloud.google.com/neg: '{"ingress": true}'}
+spec:
+  selector: {app: guardian-backend}
+  ports: [{port: 80, targetPort: 8000}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: guardian-frontend}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: guardian-frontend}}
+  template:
+    metadata: {labels: {app: guardian-frontend}}
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.images.frontend | quote }}
+          ports: [{containerPort: 80}]
+          readinessProbe: {httpGet: {path: /, port: 80}, initialDelaySeconds: 5}
+          resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: 500m, memory: 256Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guardian-frontend
+  annotations: {cloud.google.com/neg: '{"ingress": true}'}
+spec:
+  selector: {app: guardian-frontend}
+  ports: [{port: 80, targetPort: 80}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: guardian
+  annotations: {kubernetes.io/ingress.class: gce}
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend: {service: {name: guardian-backend, port: {number: 80}}}
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: guardian-frontend, port: {number: 80}}}

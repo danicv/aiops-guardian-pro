@@ -1,5 +1,5 @@
 import axios from 'axios'
-export const api=axios.create({baseURL:import.meta.env.VITE_API_BASE_URL||'http://localhost:8000',timeout:30000})
+export const api=axios.create({baseURL:import.meta.env.VITE_API_BASE_URL||'',timeout:30000})
 export const getDashboard=async()=> (await api.get('/api/dashboard')).data
 export const getInvestigations=async()=> (await api.get('/api/investigations')).data
 export const getApprovals=async()=> (await api.get('/api/approvals')).data
