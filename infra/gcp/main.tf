@@ -76,16 +76,18 @@ resource "google_secret_manager_secret" "app" {
 }
 
 resource "google_secret_manager_secret_iam_member" "backend" {
-  for_each  = google_secret_manager_secret.app
-  secret_id = each.value.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = local.workload_principal
+  for_each   = google_secret_manager_secret.app
+  secret_id  = each.value.id
+  role       = "roles/secretmanager.secretAccessor"
+  member     = local.workload_principal
+  depends_on = [google_container_cluster.main]
 }
 
 resource "google_secret_manager_secret_iam_member" "postgres" {
-  secret_id = google_secret_manager_secret.app["database-password"].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = local.postgres_principal
+  secret_id  = google_secret_manager_secret.app["database-password"].id
+  role       = "roles/secretmanager.secretAccessor"
+  member     = local.postgres_principal
+  depends_on = [google_container_cluster.main]
 }
 
 resource "helm_release" "guardian" {
