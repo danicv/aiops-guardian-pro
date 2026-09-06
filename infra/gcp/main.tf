@@ -8,7 +8,7 @@ locals {
     "secretmanager.googleapis.com",
     "sts.googleapis.com"
   ])
-  secret_names = toset(["database-password", "openai-api-key", "smtp-username", "smtp-password"])
+  secret_names       = toset(["database-password", "openai-api-key", "smtp-username", "smtp-password"])
   workload_principal = "principal://iam.googleapis.com/projects/${data.google_project.current.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/${local.namespace}/sa/guardian-backend"
   postgres_principal = "principal://iam.googleapis.com/projects/${data.google_project.current.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/${local.namespace}/sa/guardian-postgres"
 }
@@ -49,11 +49,11 @@ resource "google_artifact_registry_repository" "main" {
 }
 
 resource "google_container_cluster" "main" {
-  name             = var.cluster_name
-  location         = var.region
-  enable_autopilot = true
-  network          = google_compute_network.main.id
-  subnetwork       = google_compute_subnetwork.main.id
+  name                = var.cluster_name
+  location            = var.region
+  enable_autopilot    = true
+  network             = google_compute_network.main.id
+  subnetwork          = google_compute_subnetwork.main.id
   deletion_protection = false
 
   release_channel { channel = "REGULAR" }
@@ -89,13 +89,13 @@ resource "google_secret_manager_secret_iam_member" "postgres" {
 }
 
 resource "helm_release" "guardian" {
-  count      = var.deploy_workloads ? 1 : 0
-  name       = "aiops-guardian"
-  namespace  = local.namespace
-  chart      = "${path.module}/../../deploy/helm/aiops-guardian"
+  count            = var.deploy_workloads ? 1 : 0
+  name             = "aiops-guardian"
+  namespace        = local.namespace
+  chart            = "${path.module}/../../deploy/helm/aiops-guardian"
   create_namespace = true
-  wait       = true
-  timeout    = 600
+  wait             = true
+  timeout          = 600
   values = [yamlencode({
     projectId = var.project_id
     images = {
