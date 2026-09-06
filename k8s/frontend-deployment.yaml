@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardian-frontend
+  namespace: aiops-guardian
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: guardian-frontend}
+  template:
+    metadata:
+      labels: {app: guardian-frontend}
+    spec:
+      containers:
+        - name: frontend
+          image: YOUR_ACR.azurecr.io/guardian-frontend:1.0.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guardian-frontend
+  namespace: aiops-guardian
+spec:
+  selector: {app: guardian-frontend}
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP

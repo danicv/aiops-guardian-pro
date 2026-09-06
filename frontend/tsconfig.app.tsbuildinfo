@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/api.ts","./src/main.tsx","./src/components/RiskBadge.tsx","./src/components/StatCard.tsx","./src/pages/Approvals.tsx","./src/pages/Architecture.tsx","./src/pages/AskGuardian.tsx","./src/pages/Dashboard.tsx","./src/pages/Integrations.tsx","./src/pages/Investigations.tsx","./src/pages/Pipelines.tsx"],"errors":true,"version":"5.8.3"}

@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guardian-backend
+  namespace: aiops-guardian
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardian-backend
+  namespace: aiops-guardian
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: guardian-backend
+  template:
+    metadata:
+      labels:
+        app: guardian-backend
+    spec:
+      serviceAccountName: guardian-backend
+      containers:
+        - name: backend
+          image: YOUR_ACR.azurecr.io/guardian-backend:1.0.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://localhost:4318
+          envFrom:
+            - configMapRef:
+                name: guardian-config
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "1", memory: 1Gi}
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:latest
+          args: ["--config=/etc/otelcol/config.yaml"]
+          ports:
+            - containerPort: 4317
+            - containerPort: 4318
+          volumeMounts:
+            - name: otel-config
+              mountPath: /etc/otelcol
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 250m, memory: 256Mi}
+      volumes:
+        - name: otel-config
+          configMap:
+            name: guardian-otel-sidecar
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guardian-backend
+  namespace: aiops-guardian
+spec:
+  selector:
+    app: guardian-backend
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP

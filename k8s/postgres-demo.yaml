@@ -1,0 +1,45 @@
+# Demo/capstone only. Use managed HA PostgreSQL for production.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: aiops-guardian
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: {app: postgres}
+  template:
+    metadata:
+      labels: {app: postgres}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - {name: POSTGRES_DB, value: guardian}
+            - {name: POSTGRES_USER, value: guardian}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: guardian-db, key: password}
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests: {storage: 10Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: aiops-guardian
+spec:
+  selector: {app: postgres}
+  ports:
+    - {port: 5432, targetPort: 5432}
+  type: ClusterIP

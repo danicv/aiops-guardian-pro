@@ -1,0 +1,5 @@
+prefix       = "aiopsguardian"
+environment  = "dev"
+location     = "eastus2"
+node_count   = 2
+node_vm_size = "Standard_D4s_v5"

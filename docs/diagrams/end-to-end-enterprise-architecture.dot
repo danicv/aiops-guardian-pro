@@ -1,0 +1,193 @@
+digraph G {
+  graph [
+    rankdir=TB,
+    bgcolor="white",
+    pad="0.35",
+    nodesep="0.28",
+    ranksep="0.55",
+    splines=ortho,
+    compound=true,
+    fontname="Arial",
+    fontsize=20,
+    labelloc="t",
+    label="AIOps Guardian Pro — End-to-End Enterprise Product Architecture\nPrevent • Resolve • Learn"
+  ];
+  node [shape=box, style="rounded,filled", fontname="Arial", fontsize=10, margin="0.10,0.07", color="#68768A", fillcolor="#F7F9FC", fontcolor="#172033"];
+  edge [fontname="Arial", fontsize=8, color="#718096", arrowsize=0.65];
+
+  subgraph cluster_entry {
+    label="1. Client Experience & Entry";
+    color="#B8C2D1"; style="rounded";
+    users [label="Users / SRE / DevOps / Approvers", fillcolor="#EEF4FB"];
+    events [label="Alerts / Pipeline Events / Webhooks", fillcolor="#EEF4FB"];
+    lb [label="Azure Load Balancer / Ingress\nTLS + routing", fillcolor="#EAF2FF"];
+    frontend [label="React + TypeScript + Vite\nNPM Frontend\nDashboard • Incidents • Pipelines • Approvals • Integrations", fillcolor="#EAF2FF"];
+    api [label="FastAPI Backend\nREST APIs • callbacks • health endpoints", fillcolor="#EAF2FF"];
+    entra [label="Microsoft Entra ID\nSSO • RBAC • approver identity", fillcolor="#FFF6E5"];
+    users -> lb; events -> api;
+    lb -> frontend; lb -> api;
+    frontend -> api [label="HTTPS / JSON"];
+    entra -> frontend [style=dashed, label="SSO"];
+    entra -> api [style=dashed, label="token / claims"];
+  }
+
+  subgraph cluster_ai {
+    label="2. AI Control Plane — Production Orchestration";
+    color="#8FB1D9"; style="rounded";
+    orchestrator [label="ORCHESTRATOR AGENT\nLangGraph\nIntent • plan • shared state • dynamic routing\nbounded retries • pause/resume • completion", fillcolor="#DDEEFF", penwidth=2.2, color="#3C6FA8", fontsize=12];
+
+    pipeline [label="Pipeline Agent\nfailed stage • build/test/IaC"];
+    change [label="Change Agent\ncommit/config/release diff"];
+    k8s [label="Kubernetes Agent\npods • events • logs • health"];
+    monitor [label="Monitoring Agent\nmetrics • logs • traces"];
+    rag [label="RAG Agent\nrunbooks • SOPs • RCA docs"];
+    history [label="History Agent\nincidents • releases • outcomes"];
+    corr [label="Correlation Agent\ncross-signal evidence"];
+    rca [label="RCA Agent\nprobable cause + evidence"];
+    validation [label="Validation Agent\nconfidence + sufficiency"];
+    adaptive [label="Adaptive Agent\nselect next investigation step"];
+    risk [label="Release / Risk Agent\npre-deploy risk + blast radius"];
+    remediation [label="Remediation Agent\npropose safe corrective action"];
+    verify [label="Verification Agent\npost-change health + baseline"];
+
+    orchestrator -> pipeline;
+    orchestrator -> change;
+    orchestrator -> k8s;
+    orchestrator -> monitor;
+    orchestrator -> rag;
+    orchestrator -> history;
+    pipeline -> corr; change -> corr; k8s -> corr; monitor -> corr; rag -> corr; history -> corr;
+    corr -> rca -> validation -> adaptive;
+    adaptive -> orchestrator [label="need more evidence", style=dashed, constraint=false];
+    adaptive -> risk [label="sufficient"];
+    risk -> remediation [style=dashed, label="candidate action"];
+    remediation -> verify [style=dashed, label="after governed execution"];
+  }
+
+  api -> orchestrator [lhead=cluster_ai, label="request / event"];
+
+  subgraph cluster_gov {
+    label="3. Guardrails, Policy & Human-in-the-Loop";
+    color="#D9B36C"; style="rounded";
+    inputg [label="Input Guardrails\nidentity • scope • prompt/sensitive-data checks", fillcolor="#FFF8E8"];
+    policy [label="Policy / Guardrail Engine\nALLOW • REQUIRE APPROVAL • BLOCK\nunknown actions denied", fillcolor="#FFF1CF", penwidth=2];
+    outputg [label="Output Guardrails\nevidence • confidence • redaction • citations", fillcolor="#FFF8E8"];
+    approval [label="Approval Service\nrequest • status • audit", fillcolor="#FFF1CF"];
+    notify [label="Notification Service\nSMTP Email now\nTeams / Slack / PagerDuty-ready", fillcolor="#FFF8E8"];
+    human [label="Human Approver\nsecure link → Entra SSO → RBAC\nApprove / Reject", fillcolor="#FFF1CF"];
+
+    inputg -> policy [style=invis];
+    policy -> approval [label="high / medium risk"];
+    approval -> notify -> human;
+    human -> approval [label="decision", constraint=false];
+  }
+
+  api -> inputg [style=dashed, label="pre-check"];
+  risk -> policy [label="action + risk"];
+  rca -> outputg [style=dashed];
+  validation -> outputg [style=dashed];
+
+  subgraph cluster_mcp {
+    label="4. Governed MCP & Integration Hub — Tool Plane (Not the Orchestrator)";
+    color="#8EC9B2"; style="rounded";
+    mcpclient [label="MCP Client / Gateway\ncapability discovery • tool calls", fillcolor="#E9F8F2", penwidth=2];
+    readmcp [label="Read MCP\nKubernetes • Pipeline • Observability • DB", fillcolor="#ECF9F3"];
+    notifmcp [label="Notification MCP\nemail / collaboration adapters", fillcolor="#ECF9F3"];
+    actionmcp [label="Action MCP\nrestart • scale • rollback\nseparate elevated identity", fillcolor="#E4F4EC", penwidth=2];
+    hub [label="Integration Hub / Provider Abstraction\nMCP • REST • Webhooks • Native Adapters\nTest Connection • Capabilities • Environment Scope", fillcolor="#E9F8F2"];
+
+    mcpclient -> readmcp;
+    mcpclient -> notifmcp;
+    mcpclient -> hub;
+    actionmcp -> hub [style=dashed];
+  }
+
+  pipeline -> mcpclient [style=dashed];
+  change -> mcpclient [style=dashed];
+  k8s -> mcpclient [style=dashed];
+  monitor -> mcpclient [style=dashed];
+  history -> mcpclient [style=dashed];
+  approval -> notifmcp [style=dashed];
+  approval -> actionmcp [label="approved only"];
+  policy -> actionmcp [style=dashed, label="policy token / decision"];
+  actionmcp -> verify [style=dashed, constraint=false];
+
+  subgraph cluster_data {
+    label="5. Knowledge, Memory & AI Quality";
+    color="#B99AC8"; style="rounded";
+    faiss [label="FAISS Vector Store\nsemantic operational knowledge", fillcolor="#F5ECF8"];
+    pg [label="PostgreSQL\nincidents • agent runs • releases • approvals\naudit • notifications • outcomes", fillcolor="#F5ECF8"];
+    docs [label="Knowledge Sources\nrunbooks • SOPs • architecture\nknown errors • previous RCAs", fillcolor="#F8F1FA"];
+    openai [label="OpenAI\nLLM + embeddings", fillcolor="#F8F1FA"];
+    deepeval [label="DeepEval\nfaithfulness • relevance • task/tool quality", fillcolor="#F8F1FA"];
+    langflow [label="Langflow\nvisual workflow design / experimentation\n(not production orchestrator)", fillcolor="#F8F1FA"];
+
+    docs -> faiss [label="ingest / embed"];
+    openai -> faiss [style=dashed, label="embeddings"];
+    faiss -> rag [style=dashed, constraint=false];
+    pg -> history [style=dashed, constraint=false];
+    rca -> deepeval [style=dashed];
+    verify -> deepeval [style=dashed];
+  }
+
+  subgraph cluster_clientsystems {
+    label="6. Client Tool Ecosystem — Plug-in Integrations";
+    color="#AAB4C2"; style="rounded";
+    cicd [label="CI/CD\nGitHub Actions • Azure DevOps • GitLab\nJenkins • Bitbucket • Harness"];
+    itsm [label="ITSM / Incident\nServiceNow • Jira SM • PagerDuty"];
+    obs [label="Observability\nPrometheus • Grafana • Azure Monitor\nSplunk • Datadog • New Relic"];
+    runtime [label="Runtime / Cloud\nAKS • EKS • GKE • Kubernetes"];
+    collab [label="Collaboration\nEmail • Teams • Slack"];
+    source [label="Source / Security\nGitHub • GitLab • SonarQube\nSnyk • Trivy"];
+
+    hub -> cicd; hub -> itsm; hub -> obs; hub -> runtime; hub -> collab; hub -> source;
+  }
+
+  subgraph cluster_obs {
+    label="7. Platform & AI Observability";
+    color="#83A6A6"; style="rounded";
+    sidecar [label="OpenTelemetry Collector Sidecar\nin each core workload pod\nOTLP localhost:4317/4318", fillcolor="#ECF6F6"];
+    gateway [label="Central OTel Gateway\nbatching • routing • export", fillcolor="#E3F1F1"];
+    prom [label="Prometheus\nmetrics"];
+    loki [label="Loki\nlogs"];
+    tempo [label="Tempo / Jaeger\ntraces"];
+    grafana [label="Grafana\nplatform + agent dashboards", fillcolor="#E3F1F1"];
+
+    sidecar -> gateway;
+    gateway -> prom; gateway -> loki; gateway -> tempo;
+    prom -> grafana; loki -> grafana; tempo -> grafana;
+  }
+
+  orchestrator -> sidecar [style=dotted, label="traces/metrics/logs"];
+  api -> sidecar [style=dotted];
+  mcpclient -> sidecar [style=dotted];
+  policy -> sidecar [style=dotted];
+  approval -> sidecar [style=dotted];
+
+  subgraph cluster_platform {
+    label="8. Azure / AKS Platform & Infrastructure as Code";
+    color="#7D9BBF"; style="rounded";
+    aks [label="Azure Kubernetes Service (AKS)\nFrontend • Backend • Agent Runtime • MCP • Langflow\nPostgreSQL demo container • OTel gateway", fillcolor="#EAF2FC", penwidth=2];
+    acr [label="Azure Container Registry\napplication images", fillcolor="#F0F5FC"];
+    kv [label="Azure Key Vault\nsecrets / integration credentials", fillcolor="#F0F5FC"];
+    identity [label="Managed / Workload Identity\nKubernetes RBAC • least privilege", fillcolor="#F0F5FC"];
+    net [label="VNet / Subnets / NSG\nprivate/internal services", fillcolor="#F0F5FC"];
+    terraform [label="Terraform\nRG • VNet • AKS • ACR • Identity • Key Vault\nRBAC • LB/Ingress • monitoring foundation", fillcolor="#DDEAFF", penwidth=2];
+
+    terraform -> aks; terraform -> acr; terraform -> kv; terraform -> identity; terraform -> net;
+    acr -> aks [label="pull images"];
+    kv -> aks [style=dashed, label="secrets"];
+    identity -> aks [style=dashed, label="auth/RBAC"];
+    net -> aks [style=dashed];
+  }
+
+  runtime -> aks [style=dashed, constraint=false];
+  actionmcp -> aks [label="approved operations", constraint=false];
+  aks -> sidecar [style=dashed, label="pod telemetry", constraint=false];
+
+  // Closed-loop learning and preventative feedback
+  pg -> risk [style=dashed, label="historical outcomes", constraint=false];
+  deepeval -> pg [style=dashed, label="evaluation results", constraint=false];
+  verify -> pg [style=dashed, label="outcome / audit", constraint=false];
+  approval -> pg [style=dashed, label="decision / audit", constraint=false];
+}

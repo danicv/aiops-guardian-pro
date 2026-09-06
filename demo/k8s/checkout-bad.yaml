@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: checkout-api}
+spec:
+  replicas: 3
+  selector: {matchLabels: {app: checkout-api}}
+  template:
+    metadata: {labels: {app: checkout-api}}
+    spec:
+      containers:
+        - name: checkout-api
+          image: checkout-api:v2.0.0
+          resources:
+            requests: {memory: 64Mi, cpu: 100m}
+            limits: {memory: 128Mi, cpu: 500m}

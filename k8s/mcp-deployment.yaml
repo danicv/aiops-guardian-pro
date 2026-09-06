@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guardian-mcp-read
+  namespace: aiops-guardian
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: guardian-mcp-read
+  namespace: aiops-guardian
+rules:
+  - apiGroups: ["", "apps"]
+    resources: ["pods", "pods/log", "events", "services", "deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: guardian-mcp-read
+  namespace: aiops-guardian
+subjects:
+  - kind: ServiceAccount
+    name: guardian-mcp-read
+    namespace: aiops-guardian
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: guardian-mcp-read
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardian-mcp
+  namespace: aiops-guardian
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: guardian-mcp}
+  template:
+    metadata:
+      labels: {app: guardian-mcp}
+    spec:
+      serviceAccountName: guardian-mcp-read
+      containers:
+        - name: mcp
+          image: YOUR_ACR.azurecr.io/guardian-mcp:1.0.0
+          ports:
+            - containerPort: 8001
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:latest
+          args: ["--config=/etc/otelcol/config.yaml"]
+          volumeMounts:
+            - name: otel-config
+              mountPath: /etc/otelcol
+      volumes:
+        - name: otel-config
+          configMap:
+            name: guardian-otel-sidecar
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guardian-mcp
+  namespace: aiops-guardian
+spec:
+  selector: {app: guardian-mcp}
+  ports:
+    - port: 8001
+      targetPort: 8001
+  type: ClusterIP

@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: guardian
+      POSTGRES_USER: guardian
+      POSTGRES_PASSWORD: guardian
+    ports: ["5432:5432"]
+    volumes: ["guardian_pg:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guardian"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://guardian:guardian@postgres:5432/guardian
+      SMTP_HOST: mailpit
+    ports: ["8000:8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes: ["guardian_data:/data"]
+
+  mcp-server:
+    build:
+      context: .
+      dockerfile: mcp-server/Dockerfile
+    ports: ["8001:8001"]
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports: ["3000:80"]
+    depends_on: [backend]
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025", "1025:1025"]
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes: ["./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: guardian
+    ports: ["3001:3000"]
+    volumes: ["./observability/grafana/provisioning:/etc/grafana/provisioning:ro"]
+
+  loki:
+    image: grafana/loki:latest
+    ports: ["3100:3100"]
+
+  tempo:
+    image: grafana/tempo:latest
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes: ["./observability/tempo/tempo.yaml:/etc/tempo.yaml:ro"]
+    ports: ["3200:3200", "4317:4317", "4318:4318"]
+
+  otel-gateway:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes: ["./observability/otel/otel-gateway.yaml:/etc/otelcol/config.yaml:ro"]
+    ports: ["4319:4317", "4320:4318", "8889:8889"]
+
+  langflow:
+    image: langflowai/langflow:latest
+    ports: ["7860:7860"]
+
+volumes:
+  guardian_pg:
+  guardian_data:

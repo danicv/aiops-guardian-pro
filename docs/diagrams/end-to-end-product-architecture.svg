@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1700" viewBox="0 0 2400 1700">
+<defs>
+  <style>
+    .title{font:700 34px Arial,sans-serif;fill:#172033}.subtitle{font:18px Arial,sans-serif;fill:#5b6778}
+    .laneTitle{font:700 20px Arial,sans-serif;fill:#263247}.boxTitle{font:700 17px Arial,sans-serif;fill:#182234}
+    .text{font:15px Arial,sans-serif;fill:#3f4a5c}.small{font:13px Arial,sans-serif;fill:#596678}
+    .box{rx:14;ry:14;stroke-width:2}.line{stroke:#718096;stroke-width:2.2;fill:none;marker-end:url(#arrow)}
+    .dash{stroke:#7b8797;stroke-width:2;stroke-dasharray:7 6;fill:none;marker-end:url(#arrow)}
+    .lightline{stroke:#a6b0bf;stroke-width:1.7;fill:none;marker-end:url(#arrow)}
+  </style>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#718096"/></marker>
+</defs>
+<rect width="2400" height="1700" fill="#ffffff"/>
+<text x="1200" y="55" text-anchor="middle" class="title">AIOps Guardian Pro — End-to-End Product Architecture</text>
+<text x="1200" y="88" text-anchor="middle" class="subtitle">Agentic DevOps, Release &amp; Reliability Intelligence Platform • Prevent • Resolve • Learn</text>
+
+<!-- Lane 1 -->
+<rect x="55" y="125" width="2290" height="220" rx="18" fill="#f7f9fc" stroke="#c7d0dc" stroke-width="2"/>
+<text x="80" y="158" class="laneTitle">1. Client Experience &amp; Entry</text>
+
+<rect class="box" x="90" y="190" width="265" height="105" fill="#eef4fb" stroke="#9db2ca"/>
+<text x="222" y="220" text-anchor="middle" class="boxTitle">Users &amp; Events</text><text x="222" y="246" text-anchor="middle" class="text">SRE • DevOps • Approvers</text><text x="222" y="269" text-anchor="middle" class="small">Alerts • pipeline events • webhooks</text>
+
+<rect class="box" x="440" y="190" width="300" height="105" fill="#eaf2ff" stroke="#7fa5d8"/>
+<text x="590" y="220" text-anchor="middle" class="boxTitle">Azure Load Balancer / Ingress</text><text x="590" y="248" text-anchor="middle" class="text">TLS • routing • external entry</text>
+
+<rect class="box" x="825" y="180" width="420" height="125" fill="#eaf2ff" stroke="#7fa5d8"/>
+<text x="1035" y="211" text-anchor="middle" class="boxTitle">React + TypeScript + Vite Frontend</text><text x="1035" y="238" text-anchor="middle" class="text">NPM-based client application</text><text x="1035" y="262" text-anchor="middle" class="small">Dashboard • Incidents • Pipelines • Approvals</text><text x="1035" y="282" text-anchor="middle" class="small">Integrations • Ask Guardian • Architecture</text>
+
+<rect class="box" x="1330" y="190" width="330" height="105" fill="#eaf2ff" stroke="#7fa5d8"/>
+<text x="1495" y="220" text-anchor="middle" class="boxTitle">FastAPI Backend</text><text x="1495" y="247" text-anchor="middle" class="text">REST • callbacks • health APIs</text><text x="1495" y="269" text-anchor="middle" class="small">API gateway to agent runtime</text>
+
+<rect class="box" x="1750" y="190" width="280" height="105" fill="#fff6e5" stroke="#d4ab5c"/>
+<text x="1890" y="220" text-anchor="middle" class="boxTitle">Microsoft Entra ID</text><text x="1890" y="247" text-anchor="middle" class="text">SSO • RBAC • approvals</text><text x="1890" y="269" text-anchor="middle" class="small">User / approver identity</text>
+
+<rect class="box" x="2085" y="190" width="220" height="105" fill="#fff6e5" stroke="#d4ab5c"/>
+<text x="2195" y="220" text-anchor="middle" class="boxTitle">Key Vault</text><text x="2195" y="247" text-anchor="middle" class="text">Secrets &amp; credentials</text><text x="2195" y="269" text-anchor="middle" class="small">Managed identity ready</text>
+
+<path class="line" d="M355 242 H440"/><path class="line" d="M740 242 H825"/><path class="line" d="M1245 242 H1330"/><path class="dash" d="M1750 235 H1660"/><path class="dash" d="M2085 255 H1660"/>
+
+<!-- Lane 2 -->
+<rect x="55" y="375" width="2290" height="610" rx="18" fill="#f8fbff" stroke="#8fb1d9" stroke-width="2"/>
+<text x="80" y="408" class="laneTitle">2. AI Control Plane — Orchestrated Multi-Agent Runtime</text>
+
+<rect class="box" x="715" y="435" width="970" height="100" fill="#ddecff" stroke="#3c6fa8" stroke-width="3"/>
+<text x="1200" y="466" text-anchor="middle" class="boxTitle">ORCHESTRATOR AGENT — LangGraph</text><text x="1200" y="493" text-anchor="middle" class="text">Intent • investigation plan • shared state • dynamic routing • bounded retries • pause/resume</text><text x="1200" y="516" text-anchor="middle" class="small">Owns the overall goal. MCP servers do not orchestrate.</text>
+<path class="line" d="M1495 295 V385 H1200 V435"/>
+
+<!-- Agent row 1 -->
+<g>
+<rect class="box" x="110" y="590" width="270" height="100" fill="#ffffff" stroke="#9fb1c8"/><text x="245" y="620" text-anchor="middle" class="boxTitle">Pipeline Agent</text><text x="245" y="646" text-anchor="middle" class="text">CI/CD failures</text><text x="245" y="668" text-anchor="middle" class="small">build • test • IaC • stage logs</text>
+<rect class="box" x="430" y="590" width="270" height="100" fill="#ffffff" stroke="#9fb1c8"/><text x="565" y="620" text-anchor="middle" class="boxTitle">Change Agent</text><text x="565" y="646" text-anchor="middle" class="text">Release / config diff</text><text x="565" y="668" text-anchor="middle" class="small">commits • env • resources</text>
+<rect class="box" x="750" y="590" width="270" height="100" fill="#ffffff" stroke="#9fb1c8"/><text x="885" y="620" text-anchor="middle" class="boxTitle">Kubernetes Agent</text><text x="885" y="646" text-anchor="middle" class="text">AKS diagnostics</text><text x="885" y="668" text-anchor="middle" class="small">pods • events • logs • health</text>
+<rect class="box" x="1070" y="590" width="270" height="100" fill="#ffffff" stroke="#9fb1c8"/><text x="1205" y="620" text-anchor="middle" class="boxTitle">Monitoring Agent</text><text x="1205" y="646" text-anchor="middle" class="text">Telemetry analysis</text><text x="1205" y="668" text-anchor="middle" class="small">metrics • logs • traces</text>
+<rect class="box" x="1390" y="590" width="270" height="100" fill="#ffffff" stroke="#9fb1c8"/><text x="1525" y="620" text-anchor="middle" class="boxTitle">RAG Agent</text><text x="1525" y="646" text-anchor="middle" class="text">Operational knowledge</text><text x="1525" y="668" text-anchor="middle" class="small">runbooks • SOPs • RCA docs</text>
+<rect class="box" x="1710" y="590" width="270" height="100" fill="#ffffff" stroke="#9fb1c8"/><text x="1845" y="620" text-anchor="middle" class="boxTitle">History / DB Agent</text><text x="1845" y="646" text-anchor="middle" class="text">Prior incidents/releases</text><text x="1845" y="668" text-anchor="middle" class="small">outcomes • patterns • audit</text>
+<rect class="box" x="2030" y="590" width="270" height="100" fill="#ffffff" stroke="#9fb1c8"/><text x="2165" y="620" text-anchor="middle" class="boxTitle">Release Risk Agent</text><text x="2165" y="646" text-anchor="middle" class="text">Pre-deploy risk</text><text x="2165" y="668" text-anchor="middle" class="small">blast radius • history • tests</text>
+</g>
+
+<path class="lightline" d="M1200 535 V560 H245 V590"/><path class="lightline" d="M1200 535 V560 H565 V590"/><path class="lightline" d="M1200 535 V560 H885 V590"/><path class="lightline" d="M1200 535 V590"/><path class="lightline" d="M1200 535 V560 H1525 V590"/><path class="lightline" d="M1200 535 V560 H1845 V590"/><path class="lightline" d="M1200 535 V560 H2165 V590"/>
+
+<!-- Reasoning pipeline -->
+<rect class="box" x="250" y="765" width="310" height="90" fill="#eef5fc" stroke="#7395bd"/><text x="405" y="797" text-anchor="middle" class="boxTitle">Correlation Agent</text><text x="405" y="824" text-anchor="middle" class="text">Cross-signal evidence synthesis</text>
+<rect class="box" x="640" y="765" width="310" height="90" fill="#eef5fc" stroke="#7395bd"/><text x="795" y="797" text-anchor="middle" class="boxTitle">RCA Agent</text><text x="795" y="824" text-anchor="middle" class="text">Evidence-backed probable cause</text>
+<rect class="box" x="1030" y="765" width="310" height="90" fill="#eef5fc" stroke="#7395bd"/><text x="1185" y="797" text-anchor="middle" class="boxTitle">Validation Agent</text><text x="1185" y="824" text-anchor="middle" class="text">Confidence + sufficiency</text>
+<rect class="box" x="1420" y="765" width="310" height="90" fill="#eef5fc" stroke="#7395bd"/><text x="1575" y="797" text-anchor="middle" class="boxTitle">Adaptive Agent</text><text x="1575" y="824" text-anchor="middle" class="text">What should be investigated next?</text>
+<rect class="box" x="1810" y="765" width="310" height="90" fill="#eef5fc" stroke="#7395bd"/><text x="1965" y="797" text-anchor="middle" class="boxTitle">Remediation Agent</text><text x="1965" y="824" text-anchor="middle" class="text">Propose safe corrective action</text>
+
+<path class="line" d="M405 855 H640"/><path class="line" d="M950 810 H1030"/><path class="line" d="M1340 810 H1420"/><path class="line" d="M1730 810 H1810"/>
+<path class="dash" d="M1575 765 V720 H1200 V535"/>
+<text x="1415" y="716" class="small">insufficient evidence → return to orchestrator</text>
+
+<!-- Verification/deepeval below -->
+<rect class="box" x="820" y="890" width="300" height="70" fill="#f5ecf8" stroke="#b28ac2"/><text x="970" y="920" text-anchor="middle" class="boxTitle">DeepEval</text><text x="970" y="944" text-anchor="middle" class="small">faithfulness • relevance • tool quality</text>
+<rect class="box" x="1280" y="890" width="300" height="70" fill="#eaf6ef" stroke="#75ae8c"/><text x="1430" y="920" text-anchor="middle" class="boxTitle">Verification Agent</text><text x="1430" y="944" text-anchor="middle" class="small">health • baseline • recovery</text>
+
+<!-- Lane 3 -->
+<rect x="55" y="1015" width="2290" height="355" rx="18" fill="#fbfbfc" stroke="#c4cbd5" stroke-width="2"/>
+<text x="80" y="1048" class="laneTitle">3. Governance, Tool Plane, Knowledge &amp; Client Integration</text>
+
+<rect class="box" x="90" y="1080" width="480" height="240" fill="#fff7e7" stroke="#d6ad5f"/>
+<text x="330" y="1112" text-anchor="middle" class="boxTitle">Guardrails &amp; Human-in-the-Loop</text>
+<text x="125" y="1148" class="text">• Input guardrails: identity, scope, prompt/sensitive data</text>
+<text x="125" y="1176" class="text">• Policy engine: ALLOW / APPROVAL / BLOCK</text>
+<text x="125" y="1204" class="text">• Tool risk: read-only / low / medium / high / prohibited</text>
+<text x="125" y="1232" class="text">• Approval service + Entra/RBAC validation</text>
+<text x="125" y="1260" class="text">• Email notification + secure portal review link</text>
+<text x="125" y="1288" class="small">High-risk production actions cannot bypass approval.</text>
+
+<rect class="box" x="620" y="1080" width="540" height="240" fill="#e9f8f2" stroke="#72b296"/>
+<text x="890" y="1112" text-anchor="middle" class="boxTitle">Governed MCP + Integration Hub</text>
+<text x="655" y="1148" class="text">MCP Client / Gateway</text>
+<text x="655" y="1176" class="text">• Read MCP: Kubernetes • Pipeline • Observability • Database</text>
+<text x="655" y="1204" class="text">• Notification MCP: Email / Teams / Slack adapters</text>
+<text x="655" y="1232" class="text">• Action MCP: restart • scale • rollback (separate identity)</text>
+<text x="655" y="1260" class="text">• Client adapters: MCP • REST • Webhooks • native providers</text>
+<text x="655" y="1288" class="small">MCP exposes capabilities; it is not the orchestrator.</text>
+
+<rect class="box" x="1210" y="1080" width="480" height="240" fill="#f5ecf8" stroke="#b28ac2"/>
+<text x="1450" y="1112" text-anchor="middle" class="boxTitle">Knowledge, Memory &amp; AI Quality</text>
+<text x="1245" y="1148" class="text">• FAISS: vectorized operational knowledge</text>
+<text x="1245" y="1176" class="text">• PostgreSQL: incidents, releases, approvals, audit, outcomes</text>
+<text x="1245" y="1204" class="text">• OpenAI: LLM + embeddings</text>
+<text x="1245" y="1232" class="text">• Runbooks / SOPs / architecture / prior RCA documents</text>
+<text x="1245" y="1260" class="text">• DeepEval results persisted for quality tracking</text>
+<text x="1245" y="1288" class="small">Langflow supports visual design/experimentation.</text>
+
+<rect class="box" x="1740" y="1080" width="565" height="240" fill="#f2f5f9" stroke="#9caabd"/>
+<text x="2022" y="1112" text-anchor="middle" class="boxTitle">Client Tool Ecosystem — Plug-in Adapters</text>
+<text x="1775" y="1148" class="text">CI/CD: GitHub Actions • Azure DevOps • GitLab • Jenkins</text>
+<text x="1775" y="1176" class="text">ITSM: ServiceNow • Jira Service Management • PagerDuty</text>
+<text x="1775" y="1204" class="text">Observability: Prometheus • Splunk • Datadog • Azure Monitor</text>
+<text x="1775" y="1232" class="text">Runtime: AKS • EKS • GKE • Kubernetes</text>
+<text x="1775" y="1260" class="text">Collaboration: Email • Teams • Slack</text>
+<text x="1775" y="1288" class="small">Connect via Integration Hub without changing agent logic.</text>
+
+<path class="line" d="M1965 855 V1000 H330 V1080"/>
+<path class="line" d="M1965 855 V1000 H890 V1080"/>
+<path class="dash" d="M1525 690 V1030 H1450 V1080"/>
+<path class="dash" d="M890 1320 V1345 H2022 V1320"/>
+
+<!-- Lane 4 -->
+<rect x="55" y="1400" width="2290" height="245" rx="18" fill="#f7fafc" stroke="#91a7bf" stroke-width="2"/>
+<text x="80" y="1433" class="laneTitle">4. AKS Runtime, Observability &amp; Terraform Infrastructure</text>
+
+<rect class="box" x="90" y="1470" width="600" height="125" fill="#eaf2fc" stroke="#7398c3"/>
+<text x="390" y="1502" text-anchor="middle" class="boxTitle">Azure / AKS Platform</text><text x="390" y="1530" text-anchor="middle" class="text">AKS • ACR • VNet/Subnets • Managed/Workload Identity</text><text x="390" y="1554" text-anchor="middle" class="text">Key Vault • Kubernetes RBAC • Persistent Storage</text><text x="390" y="1577" text-anchor="middle" class="small">Frontend, backend, MCP, Langflow, PostgreSQL demo run as workloads.</text>
+
+<rect class="box" x="755" y="1470" width="600" height="125" fill="#e9f4f4" stroke="#72a7a7"/>
+<text x="1055" y="1502" text-anchor="middle" class="boxTitle">OpenTelemetry Sidecar Pattern</text><text x="1055" y="1530" text-anchor="middle" class="text">Each core pod → local OTel Collector sidecar → central gateway</text><text x="1055" y="1554" text-anchor="middle" class="text">Prometheus metrics • Loki logs • Tempo traces • Grafana dashboards</text><text x="1055" y="1577" text-anchor="middle" class="small">Observe orchestrator, agents, MCP calls, guardrails, approvals and remediation.</text>
+
+<rect class="box" x="1420" y="1470" width="440" height="125" fill="#ddeaff" stroke="#668ebd"/>
+<text x="1640" y="1502" text-anchor="middle" class="boxTitle">Terraform</text><text x="1640" y="1530" text-anchor="middle" class="text">RG • VNet • AKS • ACR • Identity</text><text x="1640" y="1554" text-anchor="middle" class="text">Key Vault • RBAC • LB/Ingress • monitoring</text><text x="1640" y="1577" text-anchor="middle" class="small">Infrastructure as Code for repeatable environments.</text>
+
+<rect class="box" x="1925" y="1470" width="380" height="125" fill="#eef4fb" stroke="#9db2ca"/>
+<text x="2115" y="1502" text-anchor="middle" class="boxTitle">Closed-Loop Learning</text><text x="2115" y="1530" text-anchor="middle" class="text">Release → Observe → RCA → Approve</text><text x="2115" y="1554" text-anchor="middle" class="text">Remediate → Verify → Store outcome</text><text x="2115" y="1577" text-anchor="middle" class="small">History improves future release-risk decisions.</text>
+
+<path class="dash" d="M890 1320 V1450 H390 V1470"/><path class="dash" d="M1450 1320 V1450 H2115 V1470"/><path class="line" d="M690 1532 H755"/><path class="line" d="M1355 1532 H1420"/><path class="line" d="M1860 1532 H1925"/>
+
+<!-- footer -->
+<text x="1200" y="1680" text-anchor="middle" class="small">Key separation: LangGraph orchestrates • Agents reason • MCP provides tools • Guardrails govern • Humans approve • OTel observes • Terraform provisions</text>
+</svg>

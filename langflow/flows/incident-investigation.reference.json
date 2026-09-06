@@ -1,0 +1,6 @@
+{
+  "name": "AIOps Guardian Incident Investigation",
+  "type": "logical-reference",
+  "nodes": ["Input","Orchestrator","Kubernetes Agent","Monitoring Agent","Change Agent","RAG Agent","History Agent","RCA Agent","Validation Agent","Adaptive Agent","Risk Guardrail","Approval","Remediation","Verification"],
+  "edges": [["Input","Orchestrator"],["Orchestrator","Kubernetes Agent"],["Orchestrator","Monitoring Agent"],["Orchestrator","Change Agent"],["Kubernetes Agent","RCA Agent"],["Monitoring Agent","RCA Agent"],["Change Agent","RCA Agent"],["RAG Agent","RCA Agent"],["History Agent","RCA Agent"],["RCA Agent","Validation Agent"],["Validation Agent","Adaptive Agent"],["Adaptive Agent","Risk Guardrail"],["Risk Guardrail","Approval"],["Approval","Remediation"],["Remediation","Verification"]]
+}

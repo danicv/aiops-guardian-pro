@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guardian-config
+  namespace: aiops-guardian
+data:
+  APP_ENV: "prod"
+  DEMO_MODE: "false"
+  PRODUCTION_APPROVAL_REQUIRED: "true"
+  AUTO_EXECUTE_LOW_RISK: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guardian-otel-sidecar
+  namespace: aiops-guardian
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+    exporters:
+      otlp:
+        endpoint: otel-gateway.observability.svc.cluster.local:4317
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp]

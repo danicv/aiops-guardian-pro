@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: guardian
+  namespace: aiops-guardian
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: guardian.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: guardian-backend
+                port: {number: 80}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: guardian-frontend
+                port: {number: 80}
