@@ -21,6 +21,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://guardian:guardian@postgres:5432/guardian
       SMTP_HOST: mailpit
+      PROMETHEUS_URL: http://prometheus:9090
     ports: ["8000:8000"]
     depends_on:
       postgres:
@@ -43,6 +44,15 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports: ["8025:8025", "1025:1025"]
+
+  checkout-api:
+    profiles: ["observability"]
+    build: ./demo/checkout-api
+    environment:
+      SERVICE_NAME: checkout-api
+      ENVIRONMENT: prod
+      NAMESPACE: default
+    ports: ["8080:8080"]
 
   prometheus:
     image: prom/prometheus:latest

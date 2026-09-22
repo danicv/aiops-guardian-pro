@@ -29,3 +29,9 @@ Swagger UI: `/docs`
 
 ## Email
 - `POST /api/notifications/email`
+
+## Conversational investigations
+
+Ask Guardian supports saved multi-turn dialogue at `/api/conversations`.
+See [conversation API and behavior](conversations.md) for scope, revisions,
+clarification questions, guided/LLM modes, and telemetry refresh semantics.

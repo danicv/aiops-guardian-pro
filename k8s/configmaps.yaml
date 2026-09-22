@@ -5,6 +5,7 @@ metadata:
   namespace: aiops-guardian
 data:
   APP_ENV: "prod"
+  AUTH_REQUIRED: "true"
   DEMO_MODE: "false"
   PRODUCTION_APPROVAL_REQUIRED: "true"
   AUTO_EXECUTE_LOW_RISK: "false"

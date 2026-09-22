@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 def load_mounted_secrets(path: str = "/var/secrets") -> None:
@@ -36,7 +37,11 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = "aiops-guardian@example.local"
     approval_email_to: str = "approver@example.local"
+    availability_slo: float = Field(default=0.998, gt=0, lt=1)
+    latency_threshold_ms: float = Field(default=500, gt=0)
     prometheus_url: str = "http://localhost:9090"
+    auth_required: bool = False
+    auth_secret: str = "local-development-secret-change-me"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

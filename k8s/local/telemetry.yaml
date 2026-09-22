@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guardian-prometheus
+  namespace: aiops-guardian
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: checkout-api
+        static_configs:
+          - targets: ["checkout-api:8080"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-api
+  namespace: aiops-guardian
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: checkout-api}
+  template:
+    metadata:
+      labels: {app: checkout-api}
+    spec:
+      containers:
+        - name: checkout-api
+          image: guardian-checkout:reports-v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - {name: SERVICE_NAME, value: checkout-api}
+            - {name: ENABLE_DEMO_FAULTS, value: "true"}
+            - {name: ENVIRONMENT, value: prod}
+            - {name: NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}
+          readinessProbe:
+            httpGet: {path: /health, port: 8080}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 250m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout-api
+  namespace: aiops-guardian
+spec:
+  selector: {app: checkout-api}
+  ports:
+    - {port: 8080, targetPort: 8080}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardian-prometheus
+  namespace: aiops-guardian
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: guardian-prometheus}
+  template:
+    metadata:
+      labels: {app: guardian-prometheus}
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v3.5.0
+          args: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=24h"]
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - {name: config, mountPath: /etc/prometheus, readOnly: true}
+            - {name: data, mountPath: /prometheus}
+          readinessProbe:
+            httpGet: {path: /-/ready, port: 9090}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+      volumes:
+        - name: config
+          configMap: {name: guardian-prometheus}
+        - name: data
+          persistentVolumeClaim: {claimName: guardian-prometheus-data}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: guardian-prometheus-data
+  namespace: aiops-guardian
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests: {storage: 2Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guardian-prometheus
+  namespace: aiops-guardian
+spec:
+  selector: {app: guardian-prometheus}
+  ports:
+    - {port: 9090, targetPort: 9090}

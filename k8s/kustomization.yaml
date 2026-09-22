@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: aiops-guardian
+
+resources:
+  - local/namespace.yaml
+  - configmaps.yaml
+  - postgres-demo.yaml
+  - backend-deployment.yaml
+  - mcp-deployment.yaml
+  - frontend-deployment.yaml
+  - local/telemetry.yaml
+  - local/loki.yaml
+
+images:
+  - name: YOUR_ACR.azurecr.io/guardian-backend
+    newName: guardian-backend
+    newTag: reports-v1
+  - name: YOUR_ACR.azurecr.io/guardian-mcp
+    newName: guardian-mcp
+    newTag: local
+  - name: YOUR_ACR.azurecr.io/guardian-frontend
+    newName: guardian-frontend
+    newTag: reports-v1
+
+secretGenerator:
+  - name: guardian-db
+    literals:
+      - password=guardian
+  - name: guardian-auth
+    literals:
+      - secret=local-development-secret-change-me
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+patches:
+  - path: local/backend-local.yaml
+  - path: local/backend-service-local.yaml
+  - path: local/frontend-service-local.yaml

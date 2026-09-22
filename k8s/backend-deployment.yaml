@@ -28,9 +28,17 @@ spec:
           env:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://localhost:4318
+            - name: AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: guardian-auth
+                  key: secret
           envFrom:
             - configMapRef:
                 name: guardian-config
+            - secretRef:
+                name: guardian-llm
+                optional: true
           readinessProbe:
             httpGet:
               path: /api/healthz

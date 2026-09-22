@@ -7,6 +7,7 @@ from .guardrails import evaluate_action, validate_rca
 from .notifications import notifications
 from .repository import repo
 from .telemetry import tracer
+from .live_telemetry import investigate_live
 
 class GuardianState(TypedDict, total=False):
     investigation_id: str
@@ -18,6 +19,10 @@ class GuardianState(TypedDict, total=False):
     plan: list[str]
     evidence: list[dict[str, Any]]
     agent_trace: list[dict[str, Any]]
+    sre_metrics: list[dict[str, Any]]
+    action_plan: list[dict[str, Any]]
+    instrumentation: list[dict[str, Any]]
+    telemetry_notice: str
     root_cause: str
     confidence_score: float
     validation: dict[str, Any]
@@ -121,6 +126,11 @@ def run_investigation(payload):
     inv_id=payload.get("investigation_id") or f"INV-{uuid4().hex[:8].upper()}"
     initial={"investigation_id":inv_id,"query":payload["query"],"application":payload.get("application","checkout-api"),"environment":payload.get("environment","prod"),"namespace":payload.get("namespace","default"),"evidence":[],"agent_trace":[],"status":"running"}
     with tracer.start_as_current_span("incident.request"):
-        result=graph.invoke(initial)
+        if payload.get("telemetry_mode", "live") == "live":
+            result = {**initial, **investigate_live(initial), "telemetry_mode": "live"}
+        else:
+            result = graph.invoke(initial)
+            result["telemetry_mode"] = "demo"
+            result.setdefault("telemetry_notice", "Simulated demo: release and diagnostic evidence are sample data, not live observations.")
     result["investigation_id"]=inv_id
     return result

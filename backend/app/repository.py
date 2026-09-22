@@ -1,8 +1,12 @@
 from datetime import datetime, timezone
 from uuid import uuid4
-from sqlalchemy import select
+from threading import RLock
+from sqlalchemy import select, update
 from .db import SessionLocal
 from .models import Approval, AuditEvent, Integration, Investigation
+from .integrations.providers import PROVIDERS, validate_configuration
+
+integration_lock = RLock()
 
 def now():
     return datetime.now(timezone.utc)
@@ -51,21 +55,30 @@ class Repository:
 
     def decide_approval(self, approval_id, status, decided_by, comment):
         with SessionLocal() as db:
-            x = db.get(Approval, approval_id)
-            if not x:
-                return None
-            x.status = status
-            x.decided_by = decided_by
-            x.comment = comment
-            x.decided_at = now()
+            decided_at = now()
+            changed = db.execute(
+                update(Approval)
+                .where(Approval.id == approval_id, Approval.status == "pending")
+                .values(status=status, decided_by=decided_by, comment=comment, decided_at=decided_at)
+            )
+            if changed.rowcount != 1:
+                exists = db.get(Approval, approval_id)
+                if not exists:
+                    return None
+                raise ValueError("Approval has already been decided.")
             db.commit()
+            x = db.get(Approval, approval_id)
             result = {"id": x.id, "investigation_id": x.investigation_id, "status": x.status, "action": x.action, "environment": x.environment}
         self.audit(f"approval.{status}", decided_by, approval_id, result)
         return result
 
     def add_integration(self, provider, name, configuration, enabled):
         integration_id = f"INT-{uuid4().hex[:8].upper()}"
-        safe_config = {k: v for k, v in configuration.items() if not any(s in k.lower() for s in ("token", "password", "secret"))}
+        if provider not in PROVIDERS or PROVIDERS[provider].status != 'available':
+            raise ValueError('This provider is not available for live access.')
+        safe_config = validate_configuration(configuration)
+        # Saving is separate from selecting a source; callers cannot bypass activation.
+        safe_config['use_for_investigations'] = False
         with SessionLocal() as db:
             db.add(Integration(id=integration_id, provider=provider, name=name, configuration=safe_config, enabled=enabled))
             db.commit()
@@ -75,7 +88,49 @@ class Repository:
     def list_integrations(self):
         with SessionLocal() as db:
             rows = db.scalars(select(Integration).order_by(Integration.created_at.desc())).all()
-            return [{"id": x.id, "provider": x.provider, "name": x.name, "configuration": x.configuration, "enabled": x.enabled} for x in rows]
+            return [self.integration_data(x) for x in rows]
+
+    @staticmethod
+    def integration_data(row):
+        # Old records may predate secret validation. Do not expose their arbitrary JSON.
+        try:
+            config = validate_configuration(row.configuration)
+        except ValueError:
+            config = {}
+        return {'id': row.id, 'provider': row.provider, 'name': row.name,
+                'configuration': config, 'enabled': row.enabled}
+
+    def get_active_integration(self, provider):
+        with SessionLocal() as db:
+            rows = db.scalars(select(Integration).where(
+                Integration.provider == provider, Integration.enabled.is_(True))
+                .order_by(Integration.created_at.desc())).all()
+            for row in rows:
+                if row.configuration.get('use_for_investigations') is True:
+                    return self.integration_data(row)
+        return None
+
+    def activate_integration(self, integration_id):
+        # One transaction clears the previous selection and selects this record.
+        # Row locks serialize selection for a provider on PostgreSQL; the lock also
+        # serializes local SQLite writes within this application process.
+        with integration_lock, SessionLocal() as db:
+            selected = db.get(Integration, integration_id)
+            if selected is None:
+                return None
+            provider = PROVIDERS.get(selected.provider)
+            if not selected.enabled or provider is None or provider.status != 'available':
+                raise ValueError('Select an enabled, available telemetry integration.')
+            config = validate_configuration(selected.configuration)
+            rows = db.scalars(select(Integration).where(Integration.provider == selected.provider)
+                              .order_by(Integration.id).with_for_update()).all()
+            for row in rows:
+                row.configuration = {**row.configuration, 'use_for_investigations': row.id == selected.id}
+            selected.configuration = {**config, 'use_for_investigations': True}
+            db.commit()
+            result = self.integration_data(selected)
+        self.audit('integration.activated', 'user', integration_id, {'provider': result['provider']})
+        return result
 
     def audit(self, event_type, actor, entity_id, payload):
         with SessionLocal() as db:

@@ -49,3 +49,17 @@ class AuditEvent(Base):
     entity_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    application: Mapped[str] = mapped_column(String(128))
+    environment: Mapped[str] = mapped_column(String(32))
+    namespace: Mapped[str] = mapped_column(String(128))
+    telemetry_mode: Mapped[str] = mapped_column(String(16))
+    revision: Mapped[int] = mapped_column(default=1)
+    messages: Mapped[list] = mapped_column(JSON, default=list)
+    context: Mapped[dict] = mapped_column(JSON, default=dict)
+    result: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 WORKDIR /app
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN python -m venv "$VIRTUAL_ENV"
 COPY mcp-server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY mcp-server .

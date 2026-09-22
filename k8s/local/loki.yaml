@@ -1,0 +1,79 @@
+# Ephemeral local demonstration store, reachable only as a ClusterIP service.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guardian-loki
+  namespace: aiops-guardian
+data:
+  loki.yaml: |
+    auth_enabled: false
+    analytics:
+      reporting_enabled: false
+    server:
+      http_listen_port: 3100
+    common:
+      instance_addr: 127.0.0.1
+      path_prefix: /loki
+      storage:
+        filesystem:
+          chunks_directory: /loki/chunks
+          rules_directory: /loki/rules
+      replication_factor: 1
+      ring:
+        kvstore:
+          store: inmemory
+    schema_config:
+      configs:
+        - from: 2024-01-01
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardian-loki
+  namespace: aiops-guardian
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: guardian-loki}
+  template:
+    metadata:
+      labels: {app: guardian-loki}
+    spec:
+      securityContext:
+        fsGroup: 10001
+      containers:
+        - name: loki
+          image: grafana/loki:3.5.0
+          args: ["-config.file=/etc/loki/loki.yaml"]
+          ports:
+            - containerPort: 3100
+          volumeMounts:
+            - {name: config, mountPath: /etc/loki, readOnly: true}
+            - {name: data, mountPath: /loki}
+          readinessProbe:
+            httpGet: {path: /ready, port: 3100}
+            initialDelaySeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+      volumes:
+        - name: config
+          configMap: {name: guardian-loki}
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guardian-loki
+  namespace: aiops-guardian
+spec:
+  selector: {app: guardian-loki}
+  ports:
+    - {port: 3100, targetPort: 3100}

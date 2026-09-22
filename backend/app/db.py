@@ -11,4 +11,5 @@ class Base(DeclarativeBase):
 
 def init_db():
     from . import models  # noqa: F401
-    Base.metadata.create_all(bind=engine)
+    if settings.database_url.startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)

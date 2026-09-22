@@ -1,7 +1,7 @@
 .git
 .github
 .env
-.venv
+.venv*
 gha-creds-*.json
 **/__pycache__
 **/*.py[cod]

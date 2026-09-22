@@ -141,6 +141,13 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
 PYTHONPATH=backend uvicorn app.main:app --reload --port 8000
+For PostgreSQL deployments, run database migrations before starting the
+backend:
+
+```bash
+DATABASE_URL=postgresql+psycopg2://guardian:guardian@localhost:5432/guardian \
+  alembic upgrade head
+```
 ```
 
 ## Primary demo
@@ -170,3 +177,10 @@ See `docs/deployment-gcp.md` for the one-time Google Cloud and GitHub setup.
 ## Production hardening
 
 This is a capstone/reference implementation. Before client production use, add organization-specific Entra token validation, signed single-use approval links, HA managed PostgreSQL, private endpoints/WAF, secret rotation, production-grade MCP authorization, full integration OAuth flows, security testing, and model/prompt governance.
+
+### Conversational Ask Guardian
+
+Ask Guardian now supports saved conversations, clarifying questions, follow-up
+answers, reported context, and explicit telemetry refresh. It runs in labelled
+guided mode without credentials and uses the configured LLM when available.
+See [conversation setup and behavior](docs/conversations.md).
