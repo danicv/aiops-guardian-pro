@@ -33,14 +33,30 @@ class MonitoringAgent(BaseAgent):
 class RAGAgent(BaseAgent):
     name = "rag"
     def execute(self, state):
+        from ..incident_cases import search_incident_cases
+        evidence_text = " ".join(f"{item.get('signal', '')} {item.get('value', '')}"
+                                  for item in state.get("evidence", []))
+        cases = search_incident_cases(f"{state.get('query', '')} {evidence_text}", limit=3)
+        case_evidence = [{"source": "synthetic-incident-library", "signal": "similar_case",
+                          "value": f"{case['case_id']}: {case['title']}", "synthetic": True}
+                         for case in cases]
         return AgentResult(self.name, "OOMKilled runbook recommends rollback/restoring validated memory limits.", [
-            {"source":"runbook","signal":"document","value":"Kubernetes OOMKilled Recovery Procedure"}], {"recommended_minimum":"768Mi"})
+            {"source":"runbook","signal":"document","value":"Kubernetes OOMKilled Recovery Procedure"},
+            *case_evidence], {"recommended_minimum":"768Mi", "similar_incidents":cases})
 
 class HistoryAgent(BaseAgent):
     name = "history"
     def execute(self, state):
-        return AgentResult(self.name, "Similar incident INC-1024 was caused by an unsafe memory-limit reduction.", [
-            {"source":"incident-history","signal":"similar_incident","value":"INC-1024"}], {"resolution":"rollback"})
+        from ..incident_cases import search_incident_cases
+        evidence_text = " ".join(f"{item.get('signal', '')} {item.get('value', '')}"
+                                  for item in state.get("evidence", []))
+        cases = search_incident_cases(f"{state.get('query', '')} {evidence_text}", limit=3)
+        evidence = [{"source": "synthetic-incident-library", "signal": "similar_case",
+                     "value": f"{case['case_id']}: {case['title']}", "synthetic": True}
+                    for case in cases]
+        summary = (f"Retrieved {len(cases)} labeled synthetic incident precedents."
+                   if cases else "No matching incident cases found in the local case library.")
+        return AgentResult(self.name, summary, evidence, {"similar_incidents": cases, "synthetic": True})
 
 class RCAAgent(BaseAgent):
     name = "rca"

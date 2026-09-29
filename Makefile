@@ -1,4 +1,4 @@
-.PHONY: up down backend frontend test validate migrate local-build local-deploy
+.PHONY: up down backend frontend test validate migrate local-build local-deploy langfuse-up
 up:
 	docker compose up --build
 down:
@@ -17,7 +17,9 @@ local-build:
 	docker build -t guardian-checkout:reports-v1 demo/checkout-api
 	docker build -t guardian-backend:reports-v1 -f backend/Dockerfile .
 	docker build -t guardian-mcp:local -f mcp-server/Dockerfile .
-	docker build --build-arg VITE_API_BASE_URL=http://localhost:30800 -t guardian-frontend:reports-v1 frontend
+	docker build --build-arg VITE_API_BASE_URL=http://localhost:30800 --build-arg VITE_LANGFUSE_URL=http://localhost:3000 -t guardian-frontend:reports-v1 frontend
+langfuse-up:
+	bash scripts/start_langfuse_local.sh
 local-deploy:
 	kubectl apply -k k8s
 	kubectl rollout restart deployment/guardian-backend -n aiops-guardian

@@ -16,6 +16,9 @@ class DemoSimulationRequest(BaseModel):
     environment: EnvironmentName = "prod"
     scenario: Literal["oom-release", "latency-spike", "pipeline-failure"] = "oom-release"
 
+class DemoCaseSeedRequest(BaseModel):
+    confirm_synthetic: Literal[True]
+
 class ReleaseRiskRequest(BaseModel):
     application: str
     environment: EnvironmentName

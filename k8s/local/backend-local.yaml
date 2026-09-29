@@ -13,9 +13,15 @@ spec:
               value: postgresql+psycopg2://guardian:guardian@postgres:5432/guardian
             - name: AUTH_REQUIRED
               value: "false"
+            - name: DEMO_DATA_ENABLED
+              value: "true"
             - name: MCP_SERVER_URL
               value: http://guardian-mcp:8001
             - name: CORS_ORIGINS
               value: http://localhost:30080,http://localhost:30081
             - name: PROMETHEUS_URL
               value: http://guardian-prometheus:9090
+            - name: LLM_BASE_URL
+              value: http://host.docker.internal:11434/v1
+            - name: LLM_MODEL
+              value: qwen2.5:1.5b

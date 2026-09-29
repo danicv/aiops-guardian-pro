@@ -8,7 +8,7 @@ def load_mounted_secrets(path: str = "/var/secrets") -> None:
     secret_dir = Path(path)
     if not secret_dir.is_dir():
         return
-    for secret_file in secret_dir.iterdir():
+    for secret_file in secret_dir.rglob("*"):
         if secret_file.is_file() and secret_file.name not in os.environ:
             os.environ[secret_file.name] = secret_file.read_text(encoding="utf-8").strip()
     if "DATABASE_URL" not in os.environ and os.environ.get("DATABASE_PASSWORD"):
@@ -20,10 +20,13 @@ load_mounted_secrets()
 class Settings(BaseSettings):
     app_env: str = "local"
     demo_mode: bool = True
+    demo_data_enabled: bool = False
     app_base_url: str = "http://localhost:3000"
     database_url: str = "sqlite:///./guardian.db"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    llm_base_url: str = ""
+    llm_model: str = ""
     openai_embedding_model: str = "text-embedding-3-small"
     faiss_path: str = "/data/faiss"
     mcp_server_url: str = "http://localhost:8001"
@@ -42,6 +45,10 @@ class Settings(BaseSettings):
     prometheus_url: str = "http://localhost:9090"
     auth_required: bool = False
     auth_secret: str = "local-development-secret-change-me"
+    langfuse_enabled: bool = False
+    langfuse_host: str = ""
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

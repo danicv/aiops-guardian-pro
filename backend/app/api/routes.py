@@ -6,11 +6,13 @@ from ..telemetry_reports import telemetry_report
 from ..notifications import notifications
 from ..orchestrator import run_investigation
 from ..repository import repo
+from ..incident_cases import incident_case_stats, seed_demo_cases
+from ..config import settings
 from ..auth import approver, viewer
 from ..conversations import start_conversation, continue_conversation, get_conversation, list_conversations
 from ..schemas import ConversationCreate, ConversationMessage
 from ..remediation_service import execute_approved_action
-from ..schemas import ApprovalDecision, DemoSimulationRequest, IntegrationCreate, InvestigationRequest, NotificationRequest, ReleaseRiskRequest
+from ..schemas import ApprovalDecision, DemoCaseSeedRequest, DemoSimulationRequest, IntegrationCreate, InvestigationRequest, NotificationRequest, ReleaseRiskRequest
 
 router = APIRouter(prefix="/api")
 
@@ -41,6 +43,16 @@ def simulate_demo(request: DemoSimulationRequest):
         outcome = result["result"]
         created.append({"investigation_id": result["investigation_id"], "status": result["status"], "approval_id": outcome.get("approval_id"), "root_cause": outcome.get("root_cause")})
     return {"scenario": request.scenario, "count": len(created), "incidents": created}
+
+@router.get("/demo/cases", dependencies=[viewer])
+def demo_case_library():
+    return {**incident_case_stats(), "seeding_enabled": settings.demo_data_enabled}
+
+@router.post("/demo/cases/seed", dependencies=[approver])
+def seed_demo_case_library(request: DemoCaseSeedRequest):
+    if not settings.demo_data_enabled:
+        raise HTTPException(404, "Demo case seeding is disabled.")
+    return {**seed_demo_cases(), "synthetic": True}
 
 @router.get("/investigations", dependencies=[viewer])
 def investigations(): return repo.list_investigations()

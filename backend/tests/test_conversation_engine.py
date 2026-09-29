@@ -20,6 +20,8 @@ SNAPSHOT = {
 @pytest.fixture(autouse=True)
 def no_external_calls(monkeypatch):
     monkeypatch.setattr(engine.settings, "openai_api_key", "")
+    monkeypatch.setattr(engine.settings, "llm_base_url", "")
+    monkeypatch.setattr(engine.settings, "llm_model", "")
     monkeypatch.setattr(engine, "ChatOpenAI", lambda **kwargs: pytest.fail("Unexpected model call"))
 
 
@@ -51,8 +53,9 @@ def fake_model(monkeypatch, answer):
             captured["structured"] = kwargs
             return self
 
-        def invoke(self, messages):
+        def invoke(self, messages, config=None):
             captured["messages"] = messages
+            captured["invoke_config"] = config
             if isinstance(answer, Exception):
                 raise answer
             return answer
@@ -161,13 +164,17 @@ def test_query_request_uses_supplied_scoped_query():
 
 def test_llm_receives_conversation_questions_scope_and_snapshot(monkeypatch):
     captured = fake_model(monkeypatch, model_answer())
+    result = {**SNAPSHOT, "similar_incidents": [{
+        "case_id": "SYN-APP-001", "title": "Database connection pool exhausted",
+        "root_cause": "Slow queries held every pooled connection.", "synthetic": True,
+    }]}
     question = "When did the issue start?"
     history = [{"role": "user", "content": "Checkout is slow"},
                {"role": "assistant", "content": "Investigating.", "question": question}]
-    answer = send("14:00 UTC", {"original_problem": "Checkout is slow", "pending_question": "onset"}, history)
+    answer = send("14:00 UTC", {"original_problem": "Checkout is slow", "pending_question": "onset"}, history, result)
     assert answer["assistant_mode"] == "llm"
     assert answer["notice"] is None
-    assert captured["configuration"]["timeout"] == 12.0
+    assert captured["configuration"]["timeout"] == 60.0
     assert captured["configuration"]["max_retries"] == 0
     assert captured["configuration"]["model"] == engine.settings.openai_model
     assert captured["structured"] == {"method": "json_schema", "strict": True}
@@ -176,8 +183,38 @@ def test_llm_receives_conversation_questions_scope_and_snapshot(monkeypatch):
     data = json.loads(captured["messages"][1]["content"].split("\n", 1)[1])
     assert data["scope"] == SCOPE
     assert data["snapshot"]["snapshot_at"] == SNAPSHOT["snapshot_at"]
+    assert data["snapshot"]["similar_incidents"][0]["case_id"] == "SYN-APP-001"
     assert data["context"]["onset"] == "14:00 UTC"
     assert "test-secret-never-sent" not in json.dumps(captured["messages"])
+
+
+def test_local_openai_compatible_model_works_without_provider_key(monkeypatch):
+    captured = fake_model(monkeypatch, model_answer())
+    monkeypatch.setattr(engine.settings, "openai_api_key", "")
+    monkeypatch.setattr(engine.settings, "llm_base_url", "http://ollama.local:11434/v1")
+    monkeypatch.setattr(engine.settings, "llm_model", "qwen2.5:1.5b")
+
+    answer = send("Checkout is slow")
+
+    assert answer["assistant_mode"] == "llm"
+    assert captured["configuration"]["api_key"] == "ollama"
+    assert captured["configuration"]["base_url"] == "http://ollama.local:11434/v1"
+    assert captured["configuration"]["model"] == "qwen2.5:1.5b"
+
+
+def test_llm_invocation_receives_langfuse_callback_when_enabled(monkeypatch):
+    captured = fake_model(monkeypatch, model_answer())
+    callback = object()
+    flushed = []
+    monkeypatch.setattr(engine, "create_langfuse_callback", lambda: callback)
+    monkeypatch.setattr(engine, "flush_langfuse_callback", flushed.append)
+
+    answer = send("14:00 UTC", {"original_problem": "Checkout is slow", "pending_question": "onset"})
+
+    assert answer["assistant_mode"] == "llm"
+    assert captured["invoke_config"]["callbacks"] == [callback]
+    assert captured["invoke_config"]["metadata"]["application"] == "checkout-api"
+    assert flushed == [callback]
 
 
 def test_llm_cannot_invent_reports_or_drop_existing_context(monkeypatch):

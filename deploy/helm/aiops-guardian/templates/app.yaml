@@ -50,6 +50,25 @@ spec:
         path: "SMTP_USERNAME"
       - resourceName: "projects/{{ .Values.projectId }}/secrets/smtp-password/versions/latest"
         path: "SMTP_PASSWORD"
+{{- if .Values.langfuse.enabled }}
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: guardian-langfuse-secrets
+spec:
+  provider: gke
+  parameters:
+    secrets: |
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/langfuse-enabled/versions/latest"
+        path: "LANGFUSE_ENABLED"
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/langfuse-host/versions/latest"
+        path: "LANGFUSE_HOST"
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/langfuse-public-key/versions/latest"
+        path: "LANGFUSE_PUBLIC_KEY"
+      - resourceName: "projects/{{ .Values.projectId }}/secrets/langfuse-secret-key/versions/latest"
+        path: "LANGFUSE_SECRET_KEY"
+{{- end }}
 ---
 apiVersion: secrets-store.csi.x-k8s.io/v1
 kind: SecretProviderClass
@@ -152,13 +171,24 @@ spec:
             - {name: CORS_ORIGINS, value: "*"}
           readinessProbe: {httpGet: {path: /api/healthz, port: 8000}, initialDelaySeconds: 10}
           resources: {requests: {cpu: 250m, memory: 512Mi}, limits: {cpu: "1", memory: 1Gi}}
-          volumeMounts: [{name: secrets, mountPath: /var/secrets, readOnly: true}]
+          volumeMounts:
+            - {name: secrets, mountPath: /var/secrets, readOnly: true}
+{{- if .Values.langfuse.enabled }}
+            - {name: langfuse-secrets, mountPath: /var/secrets/langfuse, readOnly: true}
+{{- end }}
       volumes:
         - name: secrets
           csi:
             driver: secrets-store-gke.csi.k8s.io
             readOnly: true
             volumeAttributes: {secretProviderClass: guardian-app-secrets}
+{{- if .Values.langfuse.enabled }}
+        - name: langfuse-secrets
+          csi:
+            driver: secrets-store-gke.csi.k8s.io
+            readOnly: true
+            volumeAttributes: {secretProviderClass: guardian-langfuse-secrets}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service

@@ -25,3 +25,7 @@ variable "frontend_image" {
   type    = string
   default = ""
 }
+variable "langfuse_enabled" {
+  type    = bool
+  default = false
+}

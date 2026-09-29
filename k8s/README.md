@@ -87,3 +87,6 @@ The local overlay also deploys an ephemeral `guardian-loki` service. Activate th
 Prometheus and Loki URLs in the Integration Hub, then open `/reports`.
 See [live integration setup and the controlled traffic scenario](../docs/live-integrations.md).
 The checkout fault parameters are enabled only in this local demo overlay.
+
+For optional self-hosted Langfuse callback tracing, see
+[the Langfuse setup guide](../docs/langfuse.md).

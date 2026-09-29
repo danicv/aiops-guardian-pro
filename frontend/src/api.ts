@@ -2,12 +2,16 @@ import axios from 'axios'
 export const api=axios.create({baseURL:import.meta.env.VITE_API_BASE_URL||'',timeout:30000})
 export const getDashboard=async()=> (await api.get('/api/dashboard')).data
 export const getInvestigations=async()=> (await api.get('/api/investigations')).data
+export const getInvestigation=async(id:string)=> (await api.get(`/api/investigations/${encodeURIComponent(id)}`)).data
 export const getApprovals=async()=> (await api.get('/api/approvals')).data
 export const getPipelines=async()=> (await api.get('/api/pipelines')).data
 export const getIntegrations=async()=> (await api.get('/api/integrations')).data
 export const getProviders=async()=> (await api.get('/api/integrations/providers')).data
 export const investigate=async(payload:any)=> (await api.post('/api/investigations',payload)).data
 export const simulateDemo=async(payload:any)=> (await api.post('/api/demo/simulate',payload)).data
+export type DemoCaseLibrary={count:number;synthetic_count:number;categories:Record<string,number>;seeding_enabled:boolean}
+export const getDemoCaseLibrary=async():Promise<DemoCaseLibrary>=> (await api.get('/api/demo/cases')).data
+export const seedDemoCaseLibrary=async()=> (await api.post('/api/demo/cases/seed',{confirm_synthetic:true})).data
 
 export type TelemetryScope = { application: string; environment: string; namespace: string }
 export type TelemetryMetric = { name: string; value: string; numeric_value: number | null; unit: string; status: string; baseline?: string | number | null; query?: string; error?: string; observed_at?: number | null }

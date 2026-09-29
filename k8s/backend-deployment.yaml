@@ -39,6 +39,9 @@ spec:
             - secretRef:
                 name: guardian-llm
                 optional: true
+            - secretRef:
+                name: guardian-langfuse
+                optional: true
           readinessProbe:
             httpGet:
               path: /api/healthz

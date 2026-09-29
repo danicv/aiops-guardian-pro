@@ -1,6 +1,7 @@
 .git
 .github
 .env
+.local
 .venv*
 gha-creds-*.json
 **/__pycache__

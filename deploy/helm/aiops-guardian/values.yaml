@@ -3,3 +3,5 @@ images:
   mcp: ""
   backend: ""
   frontend: ""
+langfuse:
+  enabled: false

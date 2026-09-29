@@ -184,3 +184,6 @@ Ask Guardian now supports saved conversations, clarifying questions, follow-up
 answers, reported context, and explicit telemetry refresh. It runs in labelled
 guided mode without credentials and uses the configured LLM when available.
 See [conversation setup and behavior](docs/conversations.md).
+
+Optional self-hosted LangGraph and LLM tracing is documented in
+[docs/langfuse.md](docs/langfuse.md); OpenTelemetry export remains independent.

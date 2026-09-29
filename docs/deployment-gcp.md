@@ -45,6 +45,15 @@ unset OPENAI_API_KEY
 
 Repeat for `smtp-username` and `smtp-password`. The workflow checks that all four have an enabled `latest` version before deploying pods.
 
+Self-hosted Langfuse tracing is optional. Create Secret Manager versions named
+`langfuse-enabled` (`true`), `langfuse-host` (the private server base URL),
+`langfuse-public-key`, and `langfuse-secret-key`, then enable Terraform's
+`langfuse_enabled=true` variable by manually dispatching the GitHub deployment
+workflow and selecting its Langfuse input. The Helm CSI mount remains disabled
+by default, and the GitHub workflow does not require Langfuse secrets for
+ordinary deploys.
+See [the Langfuse setup guide](langfuse.md) for details and trace-data handling.
+
 ## 3. Deploy
 
 Merge the pipeline branch into `main`, then either push to `main` or manually run **Terraform and deploy to GKE** from GitHub Actions.

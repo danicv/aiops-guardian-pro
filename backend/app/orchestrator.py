@@ -8,6 +8,8 @@ from .notifications import notifications
 from .repository import repo
 from .telemetry import tracer
 from .live_telemetry import investigate_live
+from .langfuse_tracing import create_langfuse_callback, flush_langfuse_callback
+from .incident_cases import search_incident_cases
 
 class GuardianState(TypedDict, total=False):
     investigation_id: str
@@ -19,6 +21,7 @@ class GuardianState(TypedDict, total=False):
     plan: list[str]
     evidence: list[dict[str, Any]]
     agent_trace: list[dict[str, Any]]
+    similar_incidents: list[dict[str, Any]]
     sre_metrics: list[dict[str, Any]]
     action_plan: list[dict[str, Any]]
     instrumentation: list[dict[str, Any]]
@@ -60,11 +63,14 @@ def collect_node(state):
     elif state["intent"] == "release_risk": agents = [pipeline, change]
     else: agents = [k8s, monitoring, change, rag, history]
     evidence = list(state.get("evidence", [])); trace = list(state.get("agent_trace", [])); temp = dict(state)
+    similar_incidents = []
     for agent in agents:
         result = agent.run(temp)
         evidence.extend(result.evidence); trace.append({"agent":result.agent,"summary":result.summary,"data":result.data})
+        similar_incidents.extend(result.data.get("similar_incidents", []))
         temp["evidence"] = evidence
-    return {"evidence": evidence, "agent_trace": trace}
+    return {"evidence": evidence, "agent_trace": trace,
+            "similar_incidents": similar_incidents[:3]}
 
 def analyze_node(state):
     if state["intent"] == "release_risk":
@@ -129,8 +135,34 @@ def run_investigation(payload):
         if payload.get("telemetry_mode", "live") == "live":
             result = {**initial, **investigate_live(initial), "telemetry_mode": "live"}
         else:
-            result = graph.invoke(initial)
+            callback = create_langfuse_callback()
+            try:
+                config = {"run_name": "guardian-investigation", "metadata": {
+                    "application": initial["application"],
+                    "environment": initial["environment"],
+                    "namespace": initial["namespace"],
+                    "investigation_id": inv_id,
+                    "telemetry_mode": "demo",
+                }}
+                if callback is not None:
+                    config["callbacks"] = [callback]
+                result = graph.invoke(initial, config=config)
+            finally:
+                flush_langfuse_callback(callback)
             result["telemetry_mode"] = "demo"
             result.setdefault("telemetry_notice", "Simulated demo: release and diagnostic evidence are sample data, not live observations.")
+        evidence_text = " ".join(f"{item.get('signal', '')} {item.get('value', '')}"
+                                  for item in result.get("evidence", []))
+        result["similar_incidents"] = search_incident_cases(
+            f"{initial['query']} {evidence_text}", limit=3)
+        for case in result["similar_incidents"]:
+            if not any(str(item.get("value", "")).startswith(case["case_id"])
+                       for item in result.get("evidence", [])):
+                result.setdefault("evidence", []).append({
+                    "source": "synthetic-incident-library",
+                    "signal": "similar_case",
+                    "value": f"{case['case_id']}: {case['title']}",
+                    "synthetic": True,
+                })
     result["investigation_id"]=inv_id
     return result

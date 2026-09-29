@@ -9,6 +9,7 @@ from .db import SessionLocal
 from .models import Conversation
 from .live_telemetry import investigate_live
 from .conversation_engine import build_reply
+from .incident_cases import search_incident_cases
 
 MAX_MESSAGES = 60
 
@@ -55,6 +56,8 @@ def collect_snapshot(scope, question):
         from .agents.diagnostic import RCAAgent
         result = RCAAgent().execute({'evidence': []}).data
         result['guardrail'] = {'decision': 'READ_ONLY', 'reason': 'Conversation demo; no actions are executed.', 'approval_required': False}
+    result['similar_incidents'] = search_incident_cases(
+        f"{question} {result.get('root_cause', '')}", limit=3)
     return {**result, 'telemetry_mode': scope['telemetry_mode'], 'snapshot_at': utcnow().isoformat()}
 
 

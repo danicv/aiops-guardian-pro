@@ -4,6 +4,17 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      langfuse_enabled:
+        description: Enable self-hosted Langfuse callback tracing
+        required: false
+        type: boolean
+        default: false
+      langfuse_url:
+        description: Langfuse UI URL to link from Guardian (optional)
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: gke-production
@@ -19,6 +30,8 @@ env:
   CLUSTER_NAME: aiops-guardian
   REPOSITORY: aiops-guardian-pro
   TF_DIR: infra/gcp
+  LANGFUSE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.langfuse_enabled || 'false' }}
+  LANGFUSE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.langfuse_url || '' }}
 
 jobs:
   deploy:
@@ -70,7 +83,7 @@ jobs:
           frontend_image="${registry}/frontend:${GITHUB_SHA}"
           docker build -f mcp-server/Dockerfile -t "$mcp_image" .
           docker build -f backend/Dockerfile -t "$backend_image" .
-          docker build -f frontend/Dockerfile --build-arg VITE_API_BASE_URL= -t "$frontend_image" frontend
+          docker build -f frontend/Dockerfile --build-arg VITE_API_BASE_URL= --build-arg VITE_LANGFUSE_URL="$LANGFUSE_URL" -t "$frontend_image" frontend
           docker push "$mcp_image"
           docker push "$backend_image"
           docker push "$frontend_image"
@@ -83,11 +96,17 @@ jobs:
           for secret in database-password openai-api-key smtp-username smtp-password; do
             gcloud secrets versions describe latest --secret="$secret" --project="$PROJECT_ID" >/dev/null
           done
+          if [[ "$LANGFUSE_ENABLED" == "true" ]]; then
+            for secret in langfuse-enabled langfuse-host langfuse-public-key langfuse-secret-key; do
+              gcloud secrets versions describe latest --secret="$secret" --project="$PROJECT_ID" >/dev/null
+            done
+          fi
 
       - name: Deploy workloads with Terraform and Helm
         working-directory: ${{ env.TF_DIR }}
         env:
           TF_VAR_project_id: ${{ env.PROJECT_ID }}
+          TF_VAR_langfuse_enabled: ${{ env.LANGFUSE_ENABLED }}
         run: |
           terraform apply -auto-approve \
             -var="deploy_workloads=true" \

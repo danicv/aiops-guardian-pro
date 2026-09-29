@@ -11,6 +11,7 @@ langchain>=0.3,<1
 langchain-openai>=0.2,<1
 langchain-community>=0.3,<1
 langgraph>=0.2,<1
+langfuse>=3,<4
 faiss-cpu>=1.8,<2
 numpy>=1.26,<3
 deepeval>=1.4,<4

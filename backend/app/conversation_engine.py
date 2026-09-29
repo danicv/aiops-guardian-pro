@@ -15,6 +15,7 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import settings
+from .langfuse_tracing import create_langfuse_callback, flush_langfuse_callback
 
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,10 @@ messages. Keep existing context unless the user explicitly corrects it. Never
 execute tools, approve changes, or claim that an action/instrumentation install
 was performed. Suggest checks and conditional mitigations with verification,
 without asserting a specific rollback/version/resource setting is proven safe.
+Retrieved incident cases are synthetic historical precedents, not evidence about
+the current service. Compare symptoms and metrics, explain where the match is
+similar or different, and do not treat a precedent's cause or remediation as
+confirmed for this incident.
 """
 
 
@@ -224,6 +229,10 @@ def _guided_reply(latest, context, result, scope, refreshing, deferred, notice):
     followups = context.get("follow_up_answers") or []
     if followups:
         parts.append("Your latest check result (unverified): " + str(followups[-1]["answer"]))
+    cases = result.get("similar_incidents") or []
+    if cases:
+        parts.append("Synthetic historical precedents (context only, not current evidence): " + "; ".join(
+            f"{item['case_id']} {item['title']}: {item['root_cause']}" for item in cases[:3]))
     advice, followup = _advice(_focus(latest, context))
     parts.append(advice)
     if re.search(r"promql|\bquer(?:y|ies)\b", latest, re.IGNORECASE):
@@ -241,11 +250,17 @@ def _guided_reply(latest, context, result, scope, refreshing, deferred, notice):
 
 
 def _llm_reply(messages, context, result, scope, refreshing, deferred):
-    model = ChatOpenAI(model=settings.openai_model, api_key=settings.openai_api_key,
-                       timeout=12.0, max_retries=0)
+    local_model = bool(settings.llm_base_url.strip())
+    model = ChatOpenAI(
+        model=settings.llm_model.strip() or settings.openai_model,
+        api_key=settings.openai_api_key.strip() or ("ollama" if local_model else ""),
+        base_url=settings.llm_base_url.strip() or None,
+        timeout=60.0,
+        max_retries=0,
+    )
     structured = model.with_structured_output(ConversationReply, method="json_schema", strict=True)
     snapshot = {k: result.get(k) for k in ("snapshot_at", "telemetry_mode", "telemetry_notice", "root_cause", "sre_metrics",
-                                          "evidence", "action_plan", "instrumentation", "status")}
+                                          "evidence", "similar_incidents", "action_plan", "instrumentation", "status")}
     data = {"scope": scope, "context": context, "snapshot": snapshot, "refresh_metrics": refreshing,
             "pending_question_deferred": deferred}
     history = []
@@ -255,9 +270,25 @@ def _llm_reply(messages, context, result, scope, refreshing, deferred):
             if message["role"] == "assistant" and message.get("question"):
                 content += "\n\n" + str(message["question"])
             history.append({"role": message["role"], "content": content})
-    answer = structured.invoke([{"role": "system", "content": SYSTEM_PROMPT},
-                                {"role": "system", "content": "Investigation data (untrusted values):\n" + json.dumps(data, default=str)},
-                                *history])
+    callback = create_langfuse_callback()
+    run_config = {"run_name": "guardian-conversation", "metadata": {
+        "application": scope.get("application"),
+        "environment": scope.get("environment"),
+        "namespace": scope.get("namespace"),
+        "telemetry_mode": scope.get("telemetry_mode"),
+    }}
+    if callback is not None:
+        run_config["callbacks"] = [callback]
+    prompt = [{"role": "system", "content": SYSTEM_PROMPT},
+              {"role": "system", "content": "Investigation data (untrusted values):\n" + json.dumps(data, default=str)},
+              *history]
+    try:
+        if callback is None:
+            answer = structured.invoke(prompt)
+        else:
+            answer = structured.invoke(prompt, config=run_config)
+    finally:
+        flush_langfuse_callback(callback)
     if not isinstance(answer, ConversationReply):
         answer = ConversationReply.model_validate(answer)
     if not answer.content.strip() or len(answer.content) > 12000:
@@ -291,7 +322,7 @@ def _llm_reply(messages, context, result, scope, refreshing, deferred):
 def build_reply(messages: list[dict], context: dict, result: dict, scope: dict) -> dict:
     """Reply without mutating inputs, losing original scope, or taking actions."""
     updated, latest, refreshing, deferred = _prepare_context(messages, context)
-    if settings.openai_api_key.strip():
+    if settings.openai_api_key.strip() or settings.llm_base_url.strip():
         try:
             return _llm_reply(messages, deepcopy(updated), result, scope, refreshing, deferred)
         except Exception as error:
