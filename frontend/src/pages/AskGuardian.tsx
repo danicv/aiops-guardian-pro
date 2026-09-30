@@ -77,10 +77,18 @@ export default function AskGuardian() {
   const [status, setStatus] = useState('Loading saved conversations…')
   const composer = useRef<HTMLTextAreaElement>(null)
   const log = useRef<HTMLDivElement>(null)
+  const focusComposerAfterReply = useRef(false)
 
   useEffect(() => {
     if (log.current) log.current.scrollTop = log.current.scrollHeight
   }, [conversation?.id, conversation?.revision])
+
+  useEffect(() => {
+    if (!loading && focusComposerAfterReply.current) {
+      focusComposerAfterReply.current = false
+      composer.current?.focus()
+    }
+  }, [loading, conversation?.revision])
 
   function accept(next: Conversation) {
     setConversation(next)
@@ -140,6 +148,7 @@ export default function AskGuardian() {
       accept(next)
       if (!refresh) setDraft('')
       setStatus(refresh ? 'Telemetry refreshed. Guardian has reassessed the evidence.' : 'Guardian replied.')
+      focusComposerAfterReply.current = true
     } catch (failure) {
       if (axios.isAxiosError(failure) && failure.response?.status === 409 && conversation) {
         try {
@@ -178,7 +187,7 @@ export default function AskGuardian() {
       </div>
       {error && <div className="notice conversation-error" role="alert">{error}</div>}
       <form className="conversation-composer" onSubmit={e => { e.preventDefault(); void submit() }}>
-        <label htmlFor="guardian-message">{conversation ? 'Reply or ask a follow-up question' : 'Describe the issue'}<textarea id="guardian-message" ref={composer} rows={3} maxLength={4000} disabled={loading} value={draft} onChange={e => setDraft(e.target.value)} placeholder={conversation ? 'Answer Guardian, correct a detail, or ask what to do next…' : 'What is happening, and what would you like to understand?'}/></label>
+        <label htmlFor="guardian-message">{conversation ? 'Reply or ask a follow-up question' : 'Describe the issue'}<textarea id="guardian-message" ref={composer} rows={3} maxLength={4000} disabled={loading} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={event => {if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {event.preventDefault(); if (canSend) void submit()}}} placeholder={conversation ? 'Answer Guardian, correct a detail, or ask what to do next…' : 'What is happening, and what would you like to understand?'}/></label>
         <div className="composer-actions"><div className="actions"><button className="primary" disabled={!canSend}>{loading ? 'Working…' : conversation ? 'Send reply' : 'Start investigation'}</button>{conversation && <button type="button" disabled={loading} onClick={() => submit(true)}>Refresh telemetry</button>}</div><small>{draft.length}/4000</small></div>
         <p className="conversation-status" role="status">{status || (conversation ? 'Follow-ups retain your context and the current telemetry snapshot.' : 'Guardian will collect an initial telemetry snapshot when you send.')}</p>
         {lastAssistant?.assistant_mode !== 'llm' && <p className="assistant-explainer">Guided mode uses evidence-based prompts and structured suggestions. When a supported LLM is configured, replies are labeled LLM assistant.</p>}

@@ -14,7 +14,7 @@ from app.api.routes import router
 from app.db import Base
 from app.integrations.providers import PROVIDERS, validate_configuration
 from app.live_telemetry import investigate_live, resolve_prometheus_source
-from app.models import Approval, Integration
+from app.models import Approval, Integration, Investigation
 from app.api import routes
 from app.repository import repo
 from app.telemetry_reports import telemetry_report
@@ -54,6 +54,34 @@ def test_approval_decision_is_single_use(db):
     assert first['status'] == 'approved'
     with pytest.raises(ValueError, match='already been decided'):
         repo.decide_approval('APR-TEST', 'rejected', 'other@example.com', 'rejected')
+
+
+def test_approval_list_includes_investigation_context(db):
+    with db() as session:
+        session.add(Investigation(
+            id='INV-CONTEXT', application='checkout-api', environment='prod',
+            query='Checkout latency rose after release', status='awaiting_approval',
+            root_cause='Memory limit reduction is a hypothesis.', confidence=0.88,
+            result={'telemetry_mode': 'demo', 'sre_metrics': [{'name': 'p95 latency', 'value': '690 ms'}],
+                    'evidence': [{'source': 'prometheus', 'signal': 'latency', 'value': '690 ms'}],
+                    'recommended_target': 'v1.9.0'},
+        ))
+        session.add(Approval(id='APR-CONTEXT', investigation_id='INV-CONTEXT', action='rollback_deployment', environment='prod', risk='HIGH'))
+        session.commit()
+
+    approval = next(item for item in repo.list_approvals() if item['id'] == 'APR-CONTEXT')
+    assert approval['investigation'] == {
+        'application': 'checkout-api',
+        'query': 'Checkout latency rose after release',
+        'root_cause': 'Memory limit reduction is a hypothesis.',
+        'confidence': 0.88,
+        'telemetry_mode': 'demo',
+        'telemetry_notice': None,
+        'sre_metrics': [{'name': 'p95 latency', 'value': '690 ms'}],
+        'evidence': [{'source': 'prometheus', 'signal': 'latency', 'value': '690 ms'}],
+        'guardrail': None,
+        'recommended_target': 'v1.9.0',
+    }
 
 
 def test_replayed_approval_returns_conflict(api, db, monkeypatch):

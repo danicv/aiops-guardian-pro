@@ -94,22 +94,36 @@ kubectl create secret generic guardian-langfuse -n aiops-guardian \
   --from-literal=LANGFUSE_SECRET_KEY="$LANGFUSE_INIT_PROJECT_SECRET_KEY" \
   --dry-run=client -o yaml | kubectl apply -f -
 
+echo 'Building Northstar Supply demo checkout...'
+docker build -t guardian-checkout:reports-v1 "$ROOT/demo/checkout-api"
+kind load docker-image guardian-checkout:reports-v1 --name guardian-local
+
 echo 'Building Guardian backend with local-model support...'
 docker build -t guardian-backend:reports-v1 -f "$ROOT/backend/Dockerfile" "$ROOT"
 kind load docker-image guardian-backend:reports-v1 --name guardian-local
 
 kubectl apply -k "$ROOT/k8s"
+kubectl rollout restart deployment/checkout-api -n aiops-guardian
+kubectl rollout status deployment/checkout-api -n aiops-guardian --timeout=180s
+kubectl rollout restart deployment/guardian-grafana -n aiops-guardian
+kubectl rollout status deployment/guardian-grafana -n aiops-guardian --timeout=180s
 kubectl rollout restart deployment/guardian-backend -n aiops-guardian
 kubectl rollout status deployment/guardian-backend -n aiops-guardian --timeout=180s
 
-echo 'Building Guardian UI with the Langfuse link...'
+echo 'Building Guardian UI with observability links...'
 docker build --build-arg VITE_API_BASE_URL=http://localhost:30800 \
   --build-arg VITE_LANGFUSE_URL="$LANGFUSE_UI_URL" \
+  --build-arg VITE_PROMETHEUS_URL=http://localhost:9090 \
+  --build-arg VITE_GRAFANA_URL=http://localhost:3002/d/guardian-service-health/guardian-service-health \
+  --build-arg VITE_CHECKOUT_DEMO_URL=http://localhost:18081 \
   -t guardian-frontend:reports-v1 "$ROOT/frontend"
 kind load docker-image guardian-frontend:reports-v1 --name guardian-local
 kubectl rollout restart deployment/guardian-frontend -n aiops-guardian
 kubectl rollout status deployment/guardian-frontend -n aiops-guardian --timeout=180s
 
 echo "Langfuse is starting at $LANGFUSE_UI_URL"
+echo 'Start Grafana access with: kubectl port-forward -n aiops-guardian service/guardian-grafana 3002:3000'
+echo 'Grafana local demo login: admin / guardian-local'
+echo 'Start the sample store with: kubectl port-forward -n aiops-guardian service/checkout-api 18081:8080'
 echo "Local initial access details are stored privately in: $ACCESS_FILE"
-echo 'Guardian tracing is enabled and the Langfuse header link is configured.'
+echo 'Guardian tracing is enabled and observability header links are configured.'

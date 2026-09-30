@@ -1,0 +1,108 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "sum(rate(http_server_requests_total{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"}[5m]))", "legendFormat": "requests/sec", "refId": "A"}],
+      "title": "Request rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.2}, {"color": "red", "value": 1}]}, "unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "100 * (sum(rate(http_server_requests_total{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\",status=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_server_requests_total{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"}[5m]))", "legendFormat": "5xx percent", "refId": "A"}],
+      "title": "HTTP 5xx rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 500}, {"color": "red", "value": 1000}]}, "unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_seconds_bucket{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"}[5m]))) * 1000", "legendFormat": "p95", "refId": "A"}],
+      "title": "p95 latency",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [{"options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "value_and_name", "wideLayout": true},
+      "targets": [{"expr": "max(up{job=\"checkout-api\"})", "legendFormat": "checkout-api scrape", "refId": "A"}],
+      "title": "Prometheus target",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "requests / second", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 12, "gradientMode": "opacity", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 4, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 5},
+      "id": 5,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}},
+      "targets": [{"expr": "sum by (status) (rate(http_server_requests_total{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"}[5m]))", "legendFormat": "HTTP {{status}}", "refId": "A"}],
+      "title": "Request rate by status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "latency (ms)", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 8, "gradientMode": "opacity", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 4, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 5},
+      "id": 6,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_duration_seconds_bucket{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"}[5m]))) * 1000", "legendFormat": "p50", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_seconds_bucket{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"}[5m]))) * 1000", "legendFormat": "p95", "refId": "B"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_duration_seconds_bucket{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"}[5m]))) * 1000", "legendFormat": "p99", "refId": "C"}
+      ],
+      "title": "Request latency percentiles",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 14},
+      "id": 7,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "sum(checkout_orders_total{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\",outcome=\"confirmed\"})", "instant": true, "range": false, "legendFormat": "confirmed demo orders", "refId": "A"}],
+      "title": "Confirmed demo orders since restart",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "guardian-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "unit": "currencyUSD"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 14},
+      "id": 8,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "sum(checkout_revenue_usd_total{service=\"$service\",environment=\"$environment\",namespace=\"$namespace\"})", "instant": true, "range": false, "legendFormat": "demo order value", "refId": "A"}],
+      "title": "Demo order value since restart",
+      "type": "stat"
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 41,
+  "tags": ["guardian", "service-health", "prometheus"],
+  "templating": {"list": [
+    {"name": "service", "label": "Service", "type": "query", "datasource": {"type": "prometheus", "uid": "guardian-prometheus"}, "definition": "label_values(http_server_requests_total, service)", "query": {"query": "label_values(http_server_requests_total, service)", "refId": "GuardianServiceVariable"}, "refresh": 1, "sort": 1, "current": {"selected": true, "text": "checkout-api", "value": "checkout-api"}, "options": [], "includeAll": false, "multi": false},
+    {"name": "environment", "label": "Environment", "type": "query", "datasource": {"type": "prometheus", "uid": "guardian-prometheus"}, "definition": "label_values(http_server_requests_total{service=\"$service\"}, environment)", "query": {"query": "label_values(http_server_requests_total{service=\"$service\"}, environment)", "refId": "GuardianEnvironmentVariable"}, "refresh": 1, "sort": 1, "current": {"selected": true, "text": "prod", "value": "prod"}, "options": [], "includeAll": false, "multi": false},
+    {"name": "namespace", "label": "Namespace", "type": "query", "datasource": {"type": "prometheus", "uid": "guardian-prometheus"}, "definition": "label_values(http_server_requests_total{service=\"$service\"}, namespace)", "query": {"query": "label_values(http_server_requests_total{service=\"$service\"}, namespace)", "refId": "GuardianNamespaceVariable"}, "refresh": 1, "sort": 1, "current": {"selected": true, "text": "aiops-guardian", "value": "aiops-guardian"}, "options": [], "includeAll": false, "multi": false}
+  ]},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Guardian Service Health",
+  "uid": "guardian-service-health",
+  "version": 1
+}

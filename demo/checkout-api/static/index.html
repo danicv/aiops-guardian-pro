@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ef">
+  <title>Northstar Supply | Demo Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{font-family:'DM Sans',sans-serif;color:#162321;background:#f5f4ef;font-synthesis:none;text-rendering:optimizeLegibility;--ink:#162321;--muted:#66716c;--line:#d9ddd5;--paper:#fbfaf6;--forest:#194b3b;--lime:#d8f276;--coral:#c95f42}
+    *{box-sizing:border-box}body{margin:0;min-width:320px}.demo-strip{background:var(--ink);color:#e9eee9;padding:9px 24px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.demo-strip b{color:var(--lime);font-weight:700}.site-header{height:78px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,76px);background:var(--paper)}.brand{display:flex;align-items:center;gap:11px;color:var(--ink);text-decoration:none}.brand-mark{width:32px;height:32px;background:var(--forest);border-radius:50%;display:grid;place-items:center;color:var(--lime);font-family:Manrope,sans-serif;font-weight:800;font-size:15px}.brand strong{display:block;font-family:Manrope,sans-serif;font-size:15px;line-height:1.1;letter-spacing:.06em}.brand small{display:block;margin-top:3px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}.header-right{display:flex;align-items:center;gap:20px;color:var(--muted);font-size:12px}.cart-jump{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:9px 12px;border-radius:5px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}.cart-count{min-width:20px;height:20px;padding:0 5px;background:var(--lime);border-radius:99px;display:grid;place-items:center;color:var(--ink);font-size:11px;font-weight:700}.page{max-width:1240px;margin:0 auto;padding:50px 28px 80px}.intro{display:grid;grid-template-columns:1fr auto;align-items:end;gap:32px;border-bottom:1px solid var(--line);padding-bottom:27px;margin-bottom:27px}.eyebrow{color:var(--forest);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}.intro h1{font:500 clamp(35px,5vw,58px)/1.02 'Manrope',sans-serif;letter-spacing:-.035em;margin:12px 0 10px;max-width:600px}.intro p{max-width:540px;margin:0;color:var(--muted);font-size:14px;line-height:1.6}.season-note{max-width:190px;border-left:2px solid var(--coral);padding:4px 0 4px 14px;color:#4d5a53;font-size:12px;line-height:1.5}.season-note strong{display:block;color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.08em}.shop-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:42px;align-items:start}.catalog-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}.catalog-heading h2{font:700 14px Manrope,sans-serif;margin:0}.catalog-heading span{font-size:11px;color:var(--muted)}.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 20px}.product{min-width:0}.product-photo{position:relative;aspect-ratio:1.38;overflow:hidden;background:#e8e7df;border-radius:4px}.product-photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .4s ease}.product:hover .product-photo img{transform:scale(1.035)}.product-category{position:absolute;left:11px;top:11px;background:rgba(251,250,246,.92);border-radius:2px;padding:6px 8px;color:var(--forest);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.product-info{display:grid;grid-template-columns:1fr auto;gap:8px 12px;padding-top:11px}.product-info h3{margin:0;font:600 15px Manrope,sans-serif}.product-price{font-weight:700;font-size:14px;white-space:nowrap}.product-info p{grid-column:1/-1;margin:0;color:var(--muted);font-size:12px;line-height:1.5;min-height:36px}.add-button{grid-column:1/-1;width:100%;margin-top:3px;border:1px solid #aeb8ae;background:transparent;border-radius:4px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;color:var(--ink);font:600 12px 'DM Sans',sans-serif;cursor:pointer;transition:background .15s,border .15s}.add-button:hover{background:var(--lime);border-color:var(--forest)}.add-button span:last-child{font-size:17px;line-height:12px}.checkout-column{position:sticky;top:20px}.checkout-title{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--ink);padding-bottom:13px}.checkout-title h2{margin:0;font:700 16px Manrope,sans-serif}.checkout-title span{font-size:11px;color:var(--muted)}.cart-items{min-height:80px}.empty-cart{padding:25px 0;color:var(--muted);font-size:12px;line-height:1.5;border-bottom:1px solid var(--line)}.cart-line{display:grid;grid-template-columns:1fr auto;gap:5px 14px;padding:14px 0;border-bottom:1px solid var(--line)}.cart-line strong{font-size:12px;font-weight:600}.cart-line>span{font-size:12px;font-weight:700}.cart-line small{grid-column:1;color:var(--muted);font-size:11px}.quantity{grid-column:2;grid-row:2;display:flex;align-items:center;gap:8px}.quantity button{width:23px;height:23px;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font-size:15px;cursor:pointer}.quantity output{min-width:12px;text-align:center;font-size:11px}.subtotal{display:flex;justify-content:space-between;padding:17px 0 8px;font-size:13px}.subtotal strong{font-size:16px}.shipping-note{margin:0 0 16px;color:var(--muted);font-size:10px;line-height:1.45}.checkout-field{display:grid;gap:7px;margin:15px 0 10px}.checkout-field label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.checkout-field select{width:100%;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink);font:12px 'DM Sans',sans-serif}.complete-button{width:100%;padding:13px 14px;border:0;border-radius:4px;background:var(--forest);color:white;font:700 12px 'DM Sans',sans-serif;cursor:pointer}.complete-button:hover:not(:disabled){background:#23624d}.complete-button:disabled{opacity:.45;cursor:not-allowed}.safe-note{margin:10px 0 0;color:var(--muted);font-size:10px;line-height:1.5}.status-message{display:none;margin-top:12px;padding:11px 12px;border-left:3px solid var(--forest);background:#e9eee7;font-size:11px;line-height:1.5}.status-message.error{border-color:var(--coral);background:#f7e9e3}.recent-orders{margin-top:33px}.recent-orders h2{font:700 13px Manrope,sans-serif;margin:0 0 12px}.order-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:11px}.order-row strong{font-weight:600}.order-row span{color:var(--muted)}.no-orders{padding:13px 0;color:var(--muted);font-size:11px;border-top:1px solid var(--line)}.service-footer{display:flex;justify-content:space-between;gap:20px;border-top:1px solid var(--line);margin-top:62px;padding-top:15px;color:var(--muted);font-size:10px}.service-footer a{color:var(--forest);text-decoration:none}
+    @media(max-width:850px){.shop-layout{grid-template-columns:minmax(0,1fr) 300px;gap:24px}.page{padding:36px 20px 60px}}
+    @media(max-width:680px){.demo-strip{padding:9px 12px;font-size:9px}.site-header{height:65px;padding:0 16px}.header-right>span{display:none}.page{padding:32px 16px 50px}.intro{grid-template-columns:1fr;gap:15px;padding-bottom:21px}.season-note{max-width:none}.shop-layout{grid-template-columns:1fr;gap:35px}.checkout-column{position:static;grid-row:1}.product-grid{gap:20px 12px}.product-photo{aspect-ratio:1}.product-info h3{font-size:13px}.product-info p{font-size:11px}.service-footer{flex-direction:column;gap:6px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="demo-strip"><b>Training environment</b> &nbsp; Sample products and orders only. No payment or shipment is processed.</div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Northstar Supply home"><span class="brand-mark">N</span><span><strong>NORTHSTAR</strong><small>SUPPLY CO.</small></span></a>
+    <div class="header-right"><span>Good things, made useful.</span><button class="cart-jump" id="cart-jump" type="button">Your bag <span class="cart-count" id="cart-count">0</span></button></div>
+  </header>
+  <main class="page">
+    <section class="intro"><div><div class="eyebrow">Northstar Supply &nbsp; / &nbsp; Everyday collection</div><h1>Small goods for a life in motion.</h1><p>A tiny demo storefront for a very real operational story: browse, build a bag, and place a mock order while Guardian watches the checkout service.</p></div><aside class="season-note"><strong>Demo shop</strong>Each order stays in memory and disappears when the service restarts. Product photos are illustrative.</aside></section>
+    <div class="shop-layout">
+      <section aria-labelledby="catalog-title"><div class="catalog-heading"><h2 id="catalog-title">The everyday edit</h2><span id="product-count">Loading collection...</span></div><div class="product-grid" id="product-grid" aria-live="polite"></div></section>
+      <aside class="checkout-column" id="bag" aria-label="Shopping bag and checkout">
+        <div class="checkout-title"><h2>Your bag</h2><span id="item-count">0 items</span></div>
+        <div class="cart-items" id="cart-items"></div>
+        <div class="subtotal"><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
+        <p class="shipping-note">Shipping and taxes are not calculated in this training demo.</p>
+        <div class="checkout-field"><label for="scenario">Checkout response</label><select id="scenario"><option value="normal">Normal response</option><option value="slow">Simulate 450 ms latency</option><option value="unavailable">Simulate service unavailable (503)</option></select></div>
+        <button class="complete-button" id="checkout" type="button" disabled>Place demo order</button>
+        <p class="safe-note">No card details are requested. The unavailable mode creates a synthetic 503 for monitoring practice; it does not place an order.</p>
+        <div class="status-message" id="status" role="status" aria-live="polite"></div>
+        <section class="recent-orders" aria-labelledby="orders-title"><h2 id="orders-title">Recent demo orders</h2><div id="order-list"><div class="no-orders">No orders yet. Add an item to begin.</div></div></section>
+      </aside>
+    </div>
+    <footer class="service-footer"><span>Northstar Supply is a fictional training storefront.</span><span>Service: <a href="/health">checkout-api</a> &nbsp; / &nbsp; <a href="/metrics">Metrics</a></span></footer>
+  </main>
+  <script>
+    const cartKey='northstar.demo.cart';
+    const cart=new Map();
+    let products=[];
+    const money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents/100);
+    const safe=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const statusBox=document.getElementById('status');
+    function rememberCart(){try{localStorage.setItem(cartKey,JSON.stringify([...cart]))}catch{}}
+    function restoreCart(){try{for(const [sku,qty] of JSON.parse(localStorage.getItem(cartKey)||'[]'))if(Number.isInteger(qty)&&qty>0)cart.set(sku,Math.min(qty,10))}catch{cart.clear()}}
+    function showStatus(message,error=false){statusBox.textContent=message;statusBox.classList.toggle('error',error);statusBox.style.display='block'}
+    function hideStatus(){statusBox.style.display='none'}
+    function renderProducts(){
+      document.getElementById('product-count').textContent=`${products.length} considered essentials`;
+      document.getElementById('product-grid').innerHTML=products.map(p=>`<article class="product"><div class="product-photo"><img src="${safe(p.image)}" alt="${safe(p.name)}" loading="lazy" onerror="this.style.display='none'"><span class="product-category">${safe(p.category)}</span></div><div class="product-info"><h3>${safe(p.name)}</h3><span class="product-price">${money(p.price_cents)}</span><p>${safe(p.description)}</p><button class="add-button" type="button" data-add="${safe(p.sku)}"><span>Add to bag</span><span aria-hidden="true">+</span></button></div></article>`).join('');
+    }
+    function renderCart(){
+      const rows=[...cart.entries()].map(([sku,quantity])=>({product:products.find(p=>p.sku===sku),quantity})).filter(row=>row.product);
+      const units=rows.reduce((sum,row)=>sum+row.quantity,0);
+      const total=rows.reduce((sum,row)=>sum+row.product.price_cents*row.quantity,0);
+      document.getElementById('cart-count').textContent=units;
+      document.getElementById('item-count').textContent=`${units} ${units===1?'item':'items'}`;
+      document.getElementById('subtotal').textContent=money(total);
+      document.getElementById('checkout').disabled=units===0;
+      document.getElementById('cart-items').innerHTML=rows.length?rows.map(({product:p,quantity})=>`<div class="cart-line"><strong>${safe(p.name)}</strong><span>${money(p.price_cents*quantity)}</span><small>${money(p.price_cents)} each</small><div class="quantity"><button type="button" data-change="-1" data-sku="${safe(p.sku)}" aria-label="Remove one ${safe(p.name)}">−</button><output>${quantity}</output><button type="button" data-change="1" data-sku="${safe(p.sku)}" aria-label="Add one ${safe(p.name)}">+</button></div></div>`).join(''):'<div class="empty-cart">Your bag is waiting. Add something useful from the collection.</div>';
+      rememberCart();
+    }
+    async function loadOrders(){
+      const response=await fetch('/api/orders');
+      if(!response.ok)throw new Error('Orders are temporarily unavailable.');
+      const data=await response.json();
+      const orders=data.orders||[];
+      document.getElementById('order-list').innerHTML=orders.length?orders.map(order=>`<div class="order-row"><strong>${safe(order.order_id)}</strong><span>${money(order.total_cents)} · ${safe(order.status)}</span></div>`).join(''):'<div class="no-orders">No orders yet. Add an item to begin.</div>';
+    }
+    async function start(){
+      try{
+        const response=await fetch('/api/products');
+        if(!response.ok)throw new Error('The collection could not be loaded.');
+        products=(await response.json()).products;
+        restoreCart();renderProducts();renderCart();await loadOrders();
+      }catch(error){document.getElementById('product-grid').innerHTML=`<p role="alert">${safe(error.message)}</p>`;document.getElementById('product-count').textContent='Collection unavailable'}
+    }
+    document.getElementById('product-grid').addEventListener('click',event=>{
+      const button=event.target.closest('[data-add]');if(!button)return;
+      const sku=button.dataset.add;cart.set(sku,Math.min((cart.get(sku)||0)+1,10));hideStatus();renderCart();
+    });
+    document.getElementById('cart-items').addEventListener('click',event=>{
+      const button=event.target.closest('[data-change]');if(!button)return;
+      const sku=button.dataset.sku;const next=(cart.get(sku)||0)+Number(button.dataset.change);
+      if(next>0)cart.set(sku,Math.min(next,10));else cart.delete(sku);
+      hideStatus();renderCart();
+    });
+    document.getElementById('cart-jump').addEventListener('click',()=>document.getElementById('bag').scrollIntoView({behavior:'smooth',block:'start'}));
+    document.getElementById('checkout').addEventListener('click',async event=>{
+      const button=event.currentTarget;const scenario=document.getElementById('scenario').value;
+      button.disabled=true;button.textContent='Placing demo order...';hideStatus();
+      const params=new URLSearchParams();if(scenario==='slow')params.set('delay_ms','450');if(scenario==='unavailable')params.set('fail','true');
+      const items=[...cart.entries()].map(([sku,quantity])=>({sku,quantity}));
+      try{
+        const response=await fetch(`/api/orders${params.size?'?'+params:''}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+        const data=await response.json();
+        if(!response.ok)throw new Error(data.detail||'Checkout could not complete.');
+        cart.clear();renderCart();await loadOrders();
+        showStatus(`Order ${data.order_id} confirmed for ${money(data.total_cents)}. This is a demo only; no payment was processed.`);
+      }catch(error){showStatus(`${error.message} Your bag is still here; no order was placed.`,true)}
+      finally{button.textContent='Place demo order';button.disabled=cart.size===0}
+    });
+    start();
+  </script>
+</body>
+</html>

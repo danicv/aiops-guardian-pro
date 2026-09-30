@@ -122,6 +122,8 @@ The repository runs in deterministic **demo mode** without an OpenAI key. Add an
 
 ## NPM frontend
 
+For app navigation and user workflows, see the [end-user guide](docs/user-guide.md).
+
 ```bash
 cd frontend
 npm install

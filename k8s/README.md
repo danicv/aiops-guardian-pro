@@ -20,6 +20,7 @@ kubectl rollout status deployment/guardian-backend -n aiops-guardian
 kubectl rollout status deployment/guardian-frontend -n aiops-guardian
 kubectl rollout status deployment/checkout-api -n aiops-guardian
 kubectl rollout status deployment/guardian-prometheus -n aiops-guardian
+kubectl rollout status deployment/guardian-grafana -n aiops-guardian
 ```
 
 Open the UI at `http://localhost:30080`. The backend is available at
@@ -50,7 +51,15 @@ kubectl --context kind-guardian-local -n aiops-guardian port-forward service/gua
 kubectl --context kind-guardian-local -n aiops-guardian port-forward service/checkout-api 18081:8080
 ```
 
-Open `http://localhost:30081/ask`. Generate application traffic before investigating:
+Open the sample Northstar Supply storefront at `http://localhost:18081` while
+the checkout-api port-forward is active. It is a fictional shop with an in-memory
+cart and mock orders; no payment or shipping is performed. Choose a normal, slow,
+or synthetic 503 checkout response to demonstrate the matching Prometheus metrics.
+
+Place a normal or slow mock order in the store, then open
+`http://localhost:30081/ask` with **Live Prometheus** scope `checkout-api`,
+`prod`, `aiops-guardian`. The `unavailable (503)` mode demonstrates an error
+spike; it does not create an order. These requests update Prometheus metrics.
 
 ```sh
 for i in $(seq 1 60); do curl -fsS http://localhost:18081/checkout >/dev/null; sleep 1; done

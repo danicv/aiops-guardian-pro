@@ -51,7 +51,37 @@ class Repository:
     def list_approvals(self):
         with SessionLocal() as db:
             rows = db.scalars(select(Approval).order_by(Approval.created_at.desc())).all()
-            return [{"id": x.id, "investigation_id": x.investigation_id, "action": x.action, "environment": x.environment, "risk": x.risk, "status": x.status, "decided_by": x.decided_by, "comment": x.comment, "created_at": x.created_at.isoformat()} for x in rows]
+            investigation_ids = {row.investigation_id for row in rows}
+            investigations = db.scalars(select(Investigation).where(Investigation.id.in_(investigation_ids))).all() if investigation_ids else []
+            investigation_by_id = {item.id: item for item in investigations}
+            result = []
+            for row in rows:
+                investigation = investigation_by_id.get(row.investigation_id)
+                details = investigation.result if investigation and isinstance(investigation.result, dict) else {}
+                result.append({
+                    "id": row.id,
+                    "investigation_id": row.investigation_id,
+                    "action": row.action,
+                    "environment": row.environment,
+                    "risk": row.risk,
+                    "status": row.status,
+                    "decided_by": row.decided_by,
+                    "comment": row.comment,
+                    "created_at": row.created_at.isoformat(),
+                    "investigation": {
+                        "application": investigation.application,
+                        "query": investigation.query,
+                        "root_cause": investigation.root_cause,
+                        "confidence": investigation.confidence,
+                        "telemetry_mode": details.get("telemetry_mode"),
+                        "telemetry_notice": details.get("telemetry_notice"),
+                        "sre_metrics": details.get("sre_metrics", [])[:6],
+                        "evidence": details.get("evidence", [])[:8],
+                        "guardrail": details.get("guardrail"),
+                        "recommended_target": details.get("recommended_target"),
+                    } if investigation else None,
+                })
+            return result
 
     def decide_approval(self, approval_id, status, decided_by, comment):
         with SessionLocal() as db:

@@ -12,6 +12,7 @@ resources:
   - frontend-deployment.yaml
   - local/telemetry.yaml
   - local/loki.yaml
+  - local/grafana.yaml
 
 images:
   - name: YOUR_ACR.azurecr.io/guardian-backend
@@ -31,6 +32,11 @@ secretGenerator:
   - name: guardian-auth
     literals:
       - secret=local-development-secret-change-me
+
+configMapGenerator:
+  - name: guardian-grafana-dashboard
+    files:
+      - local/dashboards/guardian-service-health.json
 
 generatorOptions:
   disableNameSuffixHash: true
