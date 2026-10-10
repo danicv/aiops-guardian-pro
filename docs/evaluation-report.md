@@ -1,0 +1,50 @@
+# Evaluation report
+
+Date: 2026-10-03. Environment: local kind cluster, `qwen2.5:1.5b` via Ollama. All numbers below were produced by code in this repo (`make test`, `scripts/capstone_evidence.py`).
+
+## 1. Defect: wrong precedent ranked first
+
+**Symptom.** In the OOM demo scenario the retrieval agents returned `SYN-K8S-002` (CPU throttling, score 24) first; the correct `SYN-K8S-001` (memory reduction -> OOMKilled, score 20) was third, tied with an unrelated rate-limit case.
+
+**Root cause.** The retrieval query was built from *all* evidence, including the output of earlier retrieval (`similar_case` entries and their titles). The first, slightly wrong results were fed back into the next query and boosted by the title-match weight, so early errors reinforced themselves. The same pattern existed in three places (`RAGAgent`, `HistoryAgent`, and the orchestrator's final lookup).
+
+**Fix.** One shared `retrieval_query()` (`backend/app/agents/diagnostic.py`) that excludes `synthetic-incident-library` evidence, used by all three call sites.
+
+**Result.**
+| | Top-1 | Scores (1st / 2nd / 3rd) |
+|---|---|---|
+| Before | `SYN-K8S-002` (wrong) | 24 / 20 / 20 |
+| After | `SYN-K8S-001` (correct) | 11 / 6 / 5 |
+
+Guarded by `backend/tests/test_retrieval_quality.py` (5 labelled queries, top-1, plus the end-to-end agent scenario).
+
+## 2. Defect: evaluation scores were constants
+
+**Symptom.** `evaluate_response` returned `tool_correctness: 0.97` always and `faithfulness: 0.96` whenever any evidence existed. The "evaluation" could not fail.
+
+**Root cause.** Placeholder values labelled "DeepEval-ready" were never replaced with measurements.
+
+**Fix.** `backend/app/evaluation.py` now computes six deterministic checks from the investigation state: root cause present, at least two evidence sources, validation passed, confidence in range, guardrail decision equals what policy would return, simulated data labelled. `passed` is true only if all hold; failures are listed.
+
+**Result.** A weak state scores below a strong state (`test_evaluation_is_derived_from_state_not_constant`). Live investigations without a validated cause are reported as `passed: false` with the reason, which is the intended behaviour.
+
+## 3. Prompt comparison (required method)
+Same 5-case test set, three prompt variants, temperature 0, deterministic pass/fail checks. Full outputs and the Prompt -> Output -> Improved/Worsened table: `docs/evidence/prompt-comparison.md`.
+
+| Variant | Score | Notes |
+|---|---|---|
+| P1 minimal | 3/5 | Short answers; fails "no-fake-action" and "labels-simulated" |
+| P2 structured (observations / hypothesis / next check) | 2/5 | **Worsened**: format instruction made it more willing to go along with the leading question ("Yes, it was likely the memory limit") |
+| P3 production prompt (grounding, missing-data and no-execution rules) | 4/5 | Improved the refusal and simulated-data labelling cases; still fails the leading-question case |
+
+**Conclusions.**
+- Explicit grounding rules help (P3 over P2), but a 1.5B model still agrees with a leading question. Prompting is not a safety control.
+- That is why actions are gated by deterministic code and the model has no executing tools; the prompt only shapes explanations.
+- Check limits: regex checks can be generous (P3's "labels-simulated" pass opens with "Yes, this is a live finding" before noting DEMO mode). Treat the scores as a regression signal, not a quality guarantee. A larger model should be re-run through the same harness.
+
+## 4. Other measurements
+| Item | Result |
+|---|---|
+| Backend tests | 104 passing |
+| Forced fault (40 failing orders) | Live detection of 5xx rate and error-budget burn; root cause correctly left unconfirmed (`docs/evidence/forced-demo-run.md`) |
+| Safety | Prod rollback -> `REQUIRE_APPROVAL`, approval record created, action not executed; unsafe free-text request -> `insufficient_data`, `READ_ONLY` (`docs/evidence/safety-enforcement.md`) |

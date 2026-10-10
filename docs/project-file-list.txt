@@ -71,7 +71,6 @@
 ./docs/architecture.md
 ./docs/build-validation.md
 ./docs/client-integration.md
-./docs/deployment-azure.md
 ./docs/guardrails-and-approvals.md
 ./docs/notifications.md
 ./docs/observability.md
@@ -108,13 +107,6 @@
 ./frontend/vite.config.d.ts
 ./frontend/vite.config.js
 ./frontend/vite.config.ts
-./infra/terraform/README.md
-./infra/terraform/main.tf
-./infra/terraform/outputs.tf
-./infra/terraform/providers.tf
-./infra/terraform/terraform.tfvars.example
-./infra/terraform/variables.tf
-./infra/terraform/versions.tf
 ./k8s/README.md
 ./k8s/backend-deployment.yaml
 ./k8s/configmaps.yaml

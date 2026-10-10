@@ -1,5 +1,13 @@
 from .base import AgentResult, BaseAgent
 
+
+def retrieval_query(state):
+    # Prior retrieval results are excluded so a wrong early match cannot reinforce itself.
+    observed = " ".join(f"{item.get('signal', '')} {item.get('value', '')}"
+                        for item in state.get("evidence", [])
+                        if item.get("source") != "synthetic-incident-library")
+    return f"{state.get('query', '')} {observed}"
+
 class PipelineAgent(BaseAgent):
     name = "pipeline"
     def execute(self, state):
@@ -34,9 +42,7 @@ class RAGAgent(BaseAgent):
     name = "rag"
     def execute(self, state):
         from ..incident_cases import search_incident_cases
-        evidence_text = " ".join(f"{item.get('signal', '')} {item.get('value', '')}"
-                                  for item in state.get("evidence", []))
-        cases = search_incident_cases(f"{state.get('query', '')} {evidence_text}", limit=3)
+        cases = search_incident_cases(retrieval_query(state), limit=3)
         case_evidence = [{"source": "synthetic-incident-library", "signal": "similar_case",
                           "value": f"{case['case_id']}: {case['title']}", "synthetic": True}
                          for case in cases]
@@ -48,9 +54,7 @@ class HistoryAgent(BaseAgent):
     name = "history"
     def execute(self, state):
         from ..incident_cases import search_incident_cases
-        evidence_text = " ".join(f"{item.get('signal', '')} {item.get('value', '')}"
-                                  for item in state.get("evidence", []))
-        cases = search_incident_cases(f"{state.get('query', '')} {evidence_text}", limit=3)
+        cases = search_incident_cases(retrieval_query(state), limit=3)
         evidence = [{"source": "synthetic-incident-library", "signal": "similar_case",
                      "value": f"{case['case_id']}: {case['title']}", "synthetic": True}
                     for case in cases]

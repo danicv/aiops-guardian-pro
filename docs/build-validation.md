@@ -15,15 +15,4 @@ npm install
 npm run build
 ```
 
-The generation environment also did not provide a Terraform CLI/HCL parser, so run:
-
-```bash
-cd infra/terraform
-terraform fmt -check -recursive
-terraform init -backend=false
-terraform validate
-```
-
-before applying to an Azure subscription.
-
-End-to-end Azure/OpenAI execution requires the user's Azure subscription, identities, DNS, email settings and optional OpenAI credentials.
+End-to-end execution requires email settings and an optional LLM endpoint (a local Ollama model works without an API key).

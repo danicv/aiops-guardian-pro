@@ -7,7 +7,7 @@ for p in root.rglob('*.py'):
 for p in root.rglob('*.json'):
     try: json.loads(p.read_text(encoding='utf-8'))
     except Exception as e: errors.append(f'JSON {p}: {e}')
-for rel in ['README.md','frontend/package.json','backend/app/orchestrator.py','mcp-server/server.py','infra/terraform/main.tf','observability/otel/otel-sidecar.yaml','docs/architecture.md']:
+for rel in ['README.md','frontend/package.json','backend/app/orchestrator.py','mcp-server/server.py','observability/otel/otel-sidecar.yaml','docs/architecture.md']:
     if not (root/rel).exists(): errors.append(f'Missing {rel}')
 if errors:
     print('\n'.join(errors)); raise SystemExit(1)

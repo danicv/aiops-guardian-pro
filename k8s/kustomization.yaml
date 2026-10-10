@@ -12,6 +12,7 @@ resources:
   - frontend-deployment.yaml
   - local/telemetry.yaml
   - local/loki.yaml
+  - local/alloy.yaml
   - local/grafana.yaml
 
 images:

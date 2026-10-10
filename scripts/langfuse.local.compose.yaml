@@ -1,5 +1,7 @@
 services:
   langfuse-web:
+    environment:
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: ollama
     ports: !override
       - 127.0.0.1:3000:3000
   minio:

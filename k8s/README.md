@@ -27,7 +27,7 @@ Open the UI at `http://localhost:30080`. The backend is available at
 `http://localhost:30800/docs`. For Minikube, use `minikube image load` instead
 of `kind load docker-image`. The local overlay uses demo PostgreSQL credentials
 and NodePorts. Replace these with Kubernetes Secrets and an ingress before
-moving to GCP.
+using a shared cluster.
 
 
 ## Live metrics in the local cluster

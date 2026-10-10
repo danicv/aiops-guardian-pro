@@ -24,8 +24,7 @@ AIOps Guardian Pro is a full-stack capstone/reference implementation combining r
 - OpenTelemetry instrumentation and **sidecar Collector** pattern
 - Prometheus, Grafana, Loki, Tempo reference stack
 - Docker / Docker Compose
-- AKS Kubernetes manifests
-- Terraform for Azure foundation
+- Local Kubernetes (kind) manifests
 - CI/CD workflow examples
 - Demo bad-release scenario
 - Unit/static tests
@@ -164,17 +163,13 @@ Clients connect through the **Integration Hub** using MCP, REST APIs, webhooks, 
 
 See `docs/client-integration.md`.
 
-## Azure / AKS
+## Evaluation evidence
 
-Terraform under `infra/terraform` provisions the Azure foundation. Kubernetes manifests under `k8s/` demonstrate the requested **OpenTelemetry Collector sidecar**.
+Problem framing: [docs/problem-framing.md](docs/problem-framing.md) · Forced demo: [docs/demo-script.md](docs/demo-script.md) · Evaluation report (root cause and fix): [docs/evaluation-report.md](docs/evaluation-report.md) · Framework justification: [docs/framework-decision.md](docs/framework-decision.md) · Generated proof (retrieval, tools, memory, adaptation, safety, prompt comparison): `docs/evidence/` via `make evidence`.
 
-See `docs/deployment-azure.md`.
+## Local Kubernetes
 
-## Google Kubernetes Engine
-
-The GitHub Actions workflow under `.github/workflows/deploy-gke.yml` uses Terraform to provision GKE Autopilot, networking, Artifact Registry, IAM and Secret Manager, then deploys the frontend, backend, MCP bridge, and persistent PostgreSQL through a Terraform-managed Helm release.
-
-See `docs/deployment-gcp.md` for the one-time Google Cloud and GitHub setup.
+Kubernetes manifests under `k8s/` run the full stack on a local kind cluster and demonstrate the **OpenTelemetry Collector sidecar**. See `k8s/README.md`.
 
 ## Production hardening
 

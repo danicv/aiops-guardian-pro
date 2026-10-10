@@ -160,7 +160,7 @@ def build():
         ("SRE guidance", "Produces advanced metrics, PromQL examples, containment steps, remediation steps, and verification criteria."),
         ("Governance", "Separates read-only analysis from controlled actions and records the decision trail."),
         ("Integrations", "Supports live Prometheus and Loki connections with validated URLs and environment-backed credentials."),
-        ("Deployment", "Runs locally on kind Kubernetes and is structured for GKE/GCP deployment."),
+        ("Deployment", "Runs locally on kind Kubernetes."),
     ], [1.6, 5.0])
 
     doc.add_heading("3. End-User Experience", level=1)
@@ -291,7 +291,6 @@ def build():
         "docs/architecture-one-page.md - responsibility boundaries and closed-loop flow",
         "docs/security.md - identity, authorization, secrets, network, AI controls, and audit",
         "docs/live-integrations.md - live telemetry and controlled traffic scenario",
-        "docs/deployment-gcp.md - Terraform, GKE, Secret Manager, and deployment workflow",
         "docs/observability.md - OTel, Prometheus, Loki, Tempo, and recommended spans",
         "demo/README.md - unsafe memory release incident scenario",
     ]:

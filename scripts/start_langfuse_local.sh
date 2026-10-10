@@ -113,7 +113,7 @@ kubectl rollout status deployment/guardian-backend -n aiops-guardian --timeout=1
 echo 'Building Guardian UI with observability links...'
 docker build --build-arg VITE_API_BASE_URL=http://localhost:30800 \
   --build-arg VITE_LANGFUSE_URL="$LANGFUSE_UI_URL" \
-  --build-arg VITE_PROMETHEUS_URL=http://localhost:9090 \
+  --build-arg VITE_PROMETHEUS_URL=http://localhost:19090 \
   --build-arg VITE_GRAFANA_URL=http://localhost:3002/d/guardian-service-health/guardian-service-health \
   --build-arg VITE_CHECKOUT_DEMO_URL=http://localhost:18081 \
   -t guardian-frontend:reports-v1 "$ROOT/frontend"

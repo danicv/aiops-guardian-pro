@@ -47,17 +47,6 @@ For a Langfuse instance running as another Kubernetes service, set `LANGFUSE_HOS
 
 Put the four settings in the local `.env` file (which is ignored by Git), with a host reachable from the backend container. When Langfuse is another service in the same Compose project, use its service name rather than `localhost`.
 
-## GKE / Secret Manager
-
-GKE's Helm chart keeps the Langfuse CSI mount disabled by default. To enable it:
-
-1. Add Secret Manager versions for `langfuse-enabled`, `langfuse-host`, `langfuse-public-key`, and `langfuse-secret-key`.
-2. Manually run the GitHub Actions GKE workflow and set its **Enable self-hosted Langfuse callback tracing** input to `true`.
-3. The workflow passes `langfuse_enabled=true` to Terraform, enabling the Langfuse SecretProviderClass and backend mount.
-4. Restart/roll out the backend after rotating Langfuse key versions.
-
-The GitHub deploy workflow does not require Langfuse secrets unless the optional GKE mount is enabled.
-
 ## Data handling
 
 Langfuse callbacks capture model inputs and outputs, which may contain user questions, operational context, and evidence summaries. Before enabling it for real incidents:

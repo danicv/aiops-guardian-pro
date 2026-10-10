@@ -11,7 +11,7 @@
 - **Integration Hub** lets clients connect CI/CD, ITSM, observability, runtime and collaboration tools through MCP, REST, webhooks or native adapters.
 - **PostgreSQL + FAISS** provide structured operational memory and semantic knowledge.
 - **OpenTelemetry sidecars** observe the backend, agent runtime, MCP calls, guardrails, approvals and remediation.
-- **AKS + Terraform** provide the container runtime and repeatable Azure infrastructure.
+- **Local Kubernetes (kind)** provides the container runtime.
 
 ## Closed-loop product flow
 

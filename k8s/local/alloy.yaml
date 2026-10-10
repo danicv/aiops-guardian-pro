@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guardian-log-collector
+  namespace: aiops-guardian
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: guardian-log-collector
+  namespace: aiops-guardian
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: guardian-log-collector
+  namespace: aiops-guardian
+subjects:
+  - kind: ServiceAccount
+    name: guardian-log-collector
+    namespace: aiops-guardian
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: guardian-log-collector
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guardian-log-collector
+  namespace: aiops-guardian
+data:
+  config.alloy: |
+    discovery.kubernetes "guardian_pods" {
+      role = "pod"
+
+      namespaces {
+        names = ["aiops-guardian"]
+      }
+    }
+
+    discovery.relabel "guardian_pods" {
+      targets = discovery.kubernetes.guardian_pods.targets
+
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+    }
+
+    loki.source.kubernetes "guardian_pods" {
+      targets    = discovery.relabel.guardian_pods.output
+      forward_to = [loki.process.recent_logs.receiver]
+    }
+
+    loki.process "recent_logs" {
+      forward_to = [loki.write.guardian_loki.receiver]
+
+      stage.drop {
+        older_than          = "24h"
+        drop_counter_reason = "older_than_24h"
+      }
+    }
+
+    loki.write "guardian_loki" {
+      external_labels = { cluster = "guardian-local" }
+
+      endpoint {
+        url = "http://guardian-loki:3100/loki/api/v1/push"
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardian-log-collector
+  namespace: aiops-guardian
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: guardian-log-collector
+  template:
+    metadata:
+      labels:
+        app: guardian-log-collector
+    spec:
+      serviceAccountName: guardian-log-collector
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 473
+        runAsGroup: 473
+        fsGroup: 473
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.10.2
+          args:
+            - run
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --storage.path=/var/lib/alloy/data
+            - /etc/alloy/config.alloy
+          ports:
+            - name: http
+              containerPort: 12345
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 473
+            runAsGroup: 473
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/alloy/data
+      volumes:
+        - name: config
+          configMap:
+            name: guardian-log-collector
+        - name: data
+          emptyDir: {}

@@ -20,7 +20,7 @@ kubectl port-forward -n aiops-guardian service/guardian-grafana 3002:3000
 
 Then open <http://localhost:3002>. The local demo login is `admin` / `guardian-local`. The Guardian header link opens the provisioned dashboard directly when this port-forward is active. Change the demo password before exposing Grafana beyond your local machine.
 
-The dashboard currently covers metrics, not logs. Its order count and value are in-memory demo totals and reset when the checkout service restarts. Loki is provisioned as a datasource, but logs will remain empty until a log collector is configured to ship container logs into Loki.
+The dashboard covers metrics, while Loki is the separate log store. In the local overlay, Grafana Alloy tails Kubernetes pod logs from only the `aiops-guardian` namespace, skips entries older than 24 hours, and forwards recent logs to Loki with `namespace`, `pod`, and `container` labels. To inspect them, open Grafana Explore, select Loki, and query `{namespace="aiops-guardian"}`. The sample order count and value are in-memory demo totals and reset when the checkout service restarts.
 
 ## Main areas
 

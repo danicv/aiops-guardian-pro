@@ -1,7 +1,7 @@
 from typing import Any, TypedDict
 from uuid import uuid4
 from langgraph.graph import END, StateGraph
-from .agents.diagnostic import PipelineAgent, ChangeAgent, KubernetesAgent, MonitoringAgent, RAGAgent, HistoryAgent, RCAAgent, ReleaseRiskAgent, VerificationAgent
+from .agents.diagnostic import retrieval_query, PipelineAgent, ChangeAgent, KubernetesAgent, MonitoringAgent, RAGAgent, HistoryAgent, RCAAgent, ReleaseRiskAgent, VerificationAgent
 from .evaluation import evaluate_response
 from .guardrails import evaluate_action, validate_rca
 from .notifications import notifications
@@ -151,10 +151,8 @@ def run_investigation(payload):
                 flush_langfuse_callback(callback)
             result["telemetry_mode"] = "demo"
             result.setdefault("telemetry_notice", "Simulated demo: release and diagnostic evidence are sample data, not live observations.")
-        evidence_text = " ".join(f"{item.get('signal', '')} {item.get('value', '')}"
-                                  for item in result.get("evidence", []))
         result["similar_incidents"] = search_incident_cases(
-            f"{initial['query']} {evidence_text}", limit=3)
+            retrieval_query({"query": initial["query"], "evidence": result.get("evidence", [])}), limit=3)
         for case in result["similar_incidents"]:
             if not any(str(item.get("value", "")).startswith(case["case_id"])
                        for item in result.get("evidence", [])):

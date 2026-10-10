@@ -38,5 +38,5 @@ Core Pod
 ## Langfuse
 
 Langfuse is an optional self-hosted destination for LangGraph and LLM
-conversation callbacks. Setup, Kubernetes/GKE configuration, and trace-data
+conversation callbacks. Setup, Kubernetes configuration, and trace-data
 privacy guidance are in [langfuse.md](langfuse.md).
