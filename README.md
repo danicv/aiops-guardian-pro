@@ -101,6 +101,20 @@ Specialized Agents -> MCP Client -> MCP Servers -> Client Systems
                                   |-> Governed actions
 ```
 
+## Run instructions (capstone)
+
+Fastest path, no Docker and no API key (demo mode, SQLite):
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r backend/requirements.txt
+make migrate && make backend            # API on http://localhost:8000/docs
+cd frontend && npm install && npm run dev   # UI on http://localhost:5173 (new terminal)
+make test                                # backend test suite
+make evidence-offline                    # retrieval, feedback and privacy evidence
+python scripts/baseline_agent.py --sample-run
+```
+Live forced-incident demo on local Kubernetes (kind) with Ollama: `make local-build local-deploy`, then the port-forwards in [k8s/README.md](k8s/README.md) and the steps in [docs/demo-script.md](docs/demo-script.md).
+
 ## Quick start
 
 ```bash
