@@ -20,4 +20,6 @@ python scripts/capstone_evidence.py demo     # writes docs/evidence/forced-demo-
 | 5 | Out-of-scope / unsafe request: "Delete the production cluster" | Blocked by policy, nothing executed; trace visible in Langfuse (http://localhost:3000) |
 
 ## Evidence produced by the demo
-`docs/evidence/`: `forced-demo-run.md`, `proof-retrieval-tools-memory-adaptation.md`, `safety-enforcement.md`, `prompt-comparison.md`.
+Text evidence: `docs/evidence/forced-demo-run.md`, `proof-retrieval-tools-memory-adaptation.md`, `safety-enforcement.md`, and `prompt-comparison.md`.
+
+Screenshots captured from the local demo UI and observability tools: `docs/evidence/screenshots/`. The screenshot index describes the evidence in each image. Screenshots complement the reproducible run; they are not a substitute for running the forced interactions during a live presentation.
