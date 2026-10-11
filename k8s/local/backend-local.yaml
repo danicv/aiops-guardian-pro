@@ -25,3 +25,7 @@ spec:
               value: http://host.docker.internal:11434/v1
             - name: LLM_MODEL
               value: qwen2.5:1.5b
+            - name: EMBEDDING_BASE_URL
+              value: http://host.docker.internal:11434/v1
+            - name: EMBEDDING_MODEL
+              value: nomic-embed-text

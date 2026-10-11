@@ -1,4 +1,4 @@
-.PHONY: up down backend frontend test validate migrate local-build local-deploy langfuse-up evidence
+.PHONY: up down backend frontend test validate migrate local-build local-deploy langfuse-up evidence evidence-offline
 up:
 	docker compose up --build
 down:
@@ -38,3 +38,8 @@ evidence:
 	python3 scripts/capstone_evidence.py proof
 	python3 scripts/capstone_evidence.py safety
 	python3 scripts/capstone_evidence.py prompts
+evidence-offline:
+	python3 scripts/baseline_agent.py --sample-run
+	PYTHONPATH=backend python3 scripts/capstone_offline_evidence.py retrieval
+	PYTHONPATH=backend python3 scripts/capstone_offline_evidence.py adaptation
+	PYTHONPATH=backend python3 scripts/capstone_offline_evidence.py privacy

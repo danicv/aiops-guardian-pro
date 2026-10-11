@@ -63,7 +63,7 @@ def test_investigation_enrichment_accepts_numeric_evidence(monkeypatch):
 
     case = {"case_id": "SYN-K8S-001", "title": "Memory limit reduction caused OOMs", "synthetic": True}
     monkeypatch.setattr(orchestrator, "graph", Graph())
-    monkeypatch.setattr(orchestrator, "search_incident_cases", lambda *args, **kwargs: [case])
+    monkeypatch.setattr(orchestrator, "retrieve_cases", lambda *args, **kwargs: [case])
     monkeypatch.setattr(orchestrator, "create_langfuse_callback", lambda: None)
 
     result = orchestrator.run_investigation({

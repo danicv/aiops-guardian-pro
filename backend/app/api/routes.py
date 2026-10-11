@@ -8,11 +8,12 @@ from ..orchestrator import run_investigation
 from ..repository import repo
 from ..incident_cases import incident_case_stats, seed_demo_cases
 from ..config import settings
+from ..feedback import record_feedback
 from ..auth import approver, viewer
 from ..conversations import start_conversation, continue_conversation, get_conversation, list_conversations
 from ..schemas import ConversationCreate, ConversationMessage
 from ..remediation_service import execute_approved_action
-from ..schemas import ApprovalDecision, DemoCaseSeedRequest, DemoSimulationRequest, IntegrationCreate, InvestigationRequest, NotificationRequest, ReleaseRiskRequest
+from ..schemas import CaseFeedbackRequest, ApprovalDecision, DemoCaseSeedRequest, DemoSimulationRequest, IntegrationCreate, InvestigationRequest, NotificationRequest, ReleaseRiskRequest
 
 router = APIRouter(prefix="/api")
 
@@ -62,6 +63,13 @@ def investigation(inv_id):
     item=repo.get_investigation(inv_id)
     if not item: raise HTTPException(404,"Investigation not found")
     return item
+
+@router.post("/feedback", dependencies=[viewer])
+def case_feedback(request: CaseFeedbackRequest):
+    try:
+        return record_feedback(request.case_id, request.helpful, request.investigation_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error))
 
 @router.post("/release-risk", dependencies=[viewer])
 def release_risk(request: ReleaseRiskRequest):

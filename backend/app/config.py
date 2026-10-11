@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_model: str = ""
     openai_embedding_model: str = "text-embedding-3-small"
+    # Any OpenAI-compatible /embeddings endpoint (for local use: Ollama + nomic-embed-text). Empty = lexical retrieval only.
+    embedding_base_url: str = ""
+    embedding_model: str = ""
+    embedding_api_key: str = ""
+    embedding_min_similarity: float = Field(default=0.55, ge=0, le=1)
     faiss_path: str = "/data/faiss"
     mcp_server_url: str = "http://localhost:8001"
     cors_origins: str = "http://localhost:3000,http://localhost:5173"

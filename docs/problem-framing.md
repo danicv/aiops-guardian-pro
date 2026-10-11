@@ -33,4 +33,6 @@ Autonomous remediation, replacing the incident commander, learning policy at run
 ## Known limitations
 - The demo-mode RCA (`RCAAgent`) is a scripted scenario (OOM after memory reduction); only live mode reasons from measured data.
 - The 1.5B local model is weak at following refusal instructions (measured, see prompt comparison).
-- Retrieval is keyword-based over a 34-case synthetic corpus, not embeddings.
+- Retrieval is keyword-based by default. Embedding retrieval (`EMBEDDING_BASE_URL` + `EMBEDDING_MODEL`, e.g. Ollama `nomic-embed-text`) is opt-in; it reached 7/8 vs 4/8 top-1 on paraphrased queries (`docs/evidence/embedding-retrieval.md`) but the corpus is still 34 synthetic cases.
+- Feedback ratings are global per case, not per user or service, and have no UI yet (`POST /api/feedback`).
+- Redaction is pattern-based (email, IP, phone, card, tokens, `password=`); it will not catch names or free-form identifiers. Langfuse traces are not redacted.

@@ -55,3 +55,8 @@ class ConversationMessage(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     expected_revision: int = Field(ge=1)
     refresh_metrics: bool = False
+
+class CaseFeedbackRequest(BaseModel):
+    case_id: str = Field(min_length=1, max_length=64)
+    helpful: bool
+    investigation_id: str | None = Field(default=None, max_length=64)

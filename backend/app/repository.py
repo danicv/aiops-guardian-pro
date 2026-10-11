@@ -3,6 +3,7 @@ from uuid import uuid4
 from threading import RLock
 from sqlalchemy import select, update
 from .db import SessionLocal
+from .redaction import redact
 from .models import Approval, AuditEvent, Integration, Investigation
 from .integrations.providers import PROVIDERS, validate_configuration
 
@@ -164,7 +165,7 @@ class Repository:
 
     def audit(self, event_type, actor, entity_id, payload):
         with SessionLocal() as db:
-            db.add(AuditEvent(id=f"AUD-{uuid4().hex[:10].upper()}", event_type=event_type, actor=actor, entity_id=entity_id, payload=payload))
+            db.add(AuditEvent(id=f"AUD-{uuid4().hex[:10].upper()}", event_type=event_type, actor=actor, entity_id=entity_id, payload=redact(payload)))
             db.commit()
 
 repo = Repository()

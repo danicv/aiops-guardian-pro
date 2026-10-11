@@ -9,7 +9,7 @@ from .repository import repo
 from .telemetry import tracer
 from .live_telemetry import investigate_live
 from .langfuse_tracing import create_langfuse_callback, flush_langfuse_callback
-from .incident_cases import search_incident_cases
+from .incident_cases import retrieve_cases
 
 class GuardianState(TypedDict, total=False):
     investigation_id: str
@@ -151,7 +151,7 @@ def run_investigation(payload):
                 flush_langfuse_callback(callback)
             result["telemetry_mode"] = "demo"
             result.setdefault("telemetry_notice", "Simulated demo: release and diagnostic evidence are sample data, not live observations.")
-        result["similar_incidents"] = search_incident_cases(
+        result["similar_incidents"] = retrieve_cases(
             retrieval_query({"query": initial["query"], "evidence": result.get("evidence", [])}), limit=3)
         for case in result["similar_incidents"]:
             if not any(str(item.get("value", "")).startswith(case["case_id"])

@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from .demo_incident_cases import DEMO_INCIDENT_CASES
+from .config import settings
 from .db import SessionLocal
 from .models import IncidentCase
 
@@ -72,7 +73,11 @@ def search_incident_cases(query, limit=3):
         score = len(matched) + (2 * len(title_terms)) + len(cause_terms)
         ranked.append((score, record.case_id, record, sorted(matched)))
     ranked.sort(key=lambda item: (-item[0], item[1]))
-    return [{
+    return [_as_result(record, score, matched, "lexical") for score, _, record, matched in ranked[:limit]]
+
+
+def _as_result(record, score, matched, method):
+    return {
         "case_id": record.case_id,
         "category": record.category,
         "service": record.service,
@@ -87,4 +92,43 @@ def search_incident_cases(query, limit=3):
         "synthetic": record.synthetic,
         "retrieval_score": score,
         "matched_terms": matched,
-    } for score, _, record, matched in ranked[:limit]]
+        "retrieval_method": method,
+    }
+
+
+def semantic_search_incident_cases(query, limit=3):
+    """Embedding similarity search. Cases below the similarity floor are dropped, so unrelated queries return nothing."""
+    from . import embeddings
+    with SessionLocal() as db:
+        records = db.scalars(select(IncidentCase).limit(1000)).all()
+    if not records or not query.strip():
+        return []
+    vectors = embeddings.embed([query] + [record.search_text for record in records])
+    ranked = sorted(((embeddings.cosine(vectors[0], vector), record.case_id, record)
+                     for vector, record in zip(vectors[1:], records)), key=lambda item: (-item[0], item[1]))
+    return [_as_result(record, round(score, 4), [], "embedding") for score, _, record in ranked[:limit]
+            if score >= settings.embedding_min_similarity]
+
+
+def retrieve_cases(query, limit=3):
+    """Retrieval used by the agents: embeddings when configured (lexical fallback), then feedback re-ranking."""
+    from . import embeddings, feedback
+    candidates = []
+    if embeddings.enabled():
+        try:
+            candidates = semantic_search_incident_cases(query, limit=limit * 3)
+        except Exception as error:
+            logger.warning("Embedding retrieval failed (%s); falling back to lexical search.", type(error).__name__)
+            candidates = search_incident_cases(query, limit=limit * 3)
+    else:
+        candidates = search_incident_cases(query, limit=limit * 3)
+    try:
+        votes = feedback.case_adjustments()
+    except SQLAlchemyError:
+        votes = {}
+    for case in candidates:
+        net = votes.get(case["case_id"], 0)
+        case["feedback_net"] = net
+        case["retrieval_score"] = round(case["retrieval_score"] * feedback.adjustment_factor(net), 4)
+    candidates.sort(key=lambda case: (-case["retrieval_score"], case["case_id"]))
+    return candidates[:limit]

@@ -80,3 +80,13 @@ class IncidentCase(Base):
     search_text: Mapped[str] = mapped_column(Text)
     synthetic: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CaseFeedback(Base):
+    """User rating of a retrieved precedent. Stores only identifiers and a rating, never free text."""
+    __tablename__ = "case_feedback"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    case_id: Mapped[str] = mapped_column(String(64), index=True)
+    investigation_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rating: Mapped[int] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

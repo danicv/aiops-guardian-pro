@@ -41,8 +41,8 @@ class MonitoringAgent(BaseAgent):
 class RAGAgent(BaseAgent):
     name = "rag"
     def execute(self, state):
-        from ..incident_cases import search_incident_cases
-        cases = search_incident_cases(retrieval_query(state), limit=3)
+        from ..incident_cases import retrieve_cases
+        cases = retrieve_cases(retrieval_query(state), limit=3)
         case_evidence = [{"source": "synthetic-incident-library", "signal": "similar_case",
                           "value": f"{case['case_id']}: {case['title']}", "synthetic": True}
                          for case in cases]
@@ -53,8 +53,8 @@ class RAGAgent(BaseAgent):
 class HistoryAgent(BaseAgent):
     name = "history"
     def execute(self, state):
-        from ..incident_cases import search_incident_cases
-        cases = search_incident_cases(retrieval_query(state), limit=3)
+        from ..incident_cases import retrieve_cases
+        cases = retrieve_cases(retrieval_query(state), limit=3)
         evidence = [{"source": "synthetic-incident-library", "signal": "similar_case",
                      "value": f"{case['case_id']}: {case['title']}", "synthetic": True}
                     for case in cases]
