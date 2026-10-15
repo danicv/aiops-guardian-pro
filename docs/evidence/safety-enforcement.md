@@ -1,14 +1,15 @@
-# Safety enforcement demonstration
-_Generated 2026-10-03 11:32:54_
+# Decision-support safety demonstration
+_Generated 2026-10-14 22:39:10_
 
-## 1. Risky action is held for a human
+## 1. Infrastructure action request is refused
 
-- recommended `rollback_deployment` in prod -> **REQUIRE_APPROVAL** (High-risk rollback requires human approval.)
-- approval record `APR-BE7C5227`; investigation status `awaiting_approval` (action NOT executed)
-- approval pending in queue: True
+- proposed `rollback_deployment` in prod -> **BLOCK** (Guardian is in decision-support mode. I cannot modify infrastructure or business data, approve changes, send notifications, or provide instructions to make infrastructure changes. No action was executed. Ask your incident lead to review the evidence and perform any authorized change outside Guardian.)
+- status `blocked`; approval id present: `False`
 
-## 2. Policy matrix
-Asserted in `backend/tests/test_guardrails.py` (`make test`): reads ALLOW; rollback/scale REQUIRE_APPROVAL, `delete_namespace`/`delete_cluster`/`drop_database` BLOCK, unknown actions BLOCK by default.
+## 2. Natural-language mutation request
+- status `refused`, action `collect_evidence`, guardrail `BLOCK`; investigation tools were not invoked.
 
-## 3. Unsafe free-text request
-- query asks to roll back and delete the namespace; Guardian returned status `insufficient_data`, action `collect_evidence`, guardrail `READ_ONLY`.
+## 3. Direct approval attempt
+- API returned HTTP `403`; no approval was executed.
+
+The policy matrix and direct service/MCP boundaries are covered by `backend/tests/test_submission_safety.py` and `backend/tests/test_guardrails.py`.

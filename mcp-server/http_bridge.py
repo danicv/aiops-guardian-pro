@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from tools import k8s_get_pods,k8s_get_events,get_pipeline,find_similar_incident,rollback_deployment
 app=FastAPI(title="AIOps Guardian MCP HTTP Demo Bridge")
@@ -15,4 +15,8 @@ def similar(application="checkout-api"): return find_similar_incident(applicatio
 class ActionRequest(BaseModel):
     namespace:str="default"; deployment:str="checkout-api"; target_version:str="v1.9.0"
 @app.post("/tools/action/rollback")
-def rollback(req:ActionRequest): return rollback_deployment(req.namespace,req.deployment,req.target_version)
+def rollback(req:ActionRequest):
+    try:
+        return rollback_deployment(req.namespace,req.deployment,req.target_version)
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from None

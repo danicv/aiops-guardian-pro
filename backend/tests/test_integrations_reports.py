@@ -45,7 +45,8 @@ def mock_http(monkeypatch, handler):
     monkeypatch.setattr(httpx, 'Client', lambda **kwargs: original(transport=httpx.MockTransport(handler), **kwargs))
 
 
-def test_approval_decision_is_single_use(db):
+def test_approval_decision_is_single_use(db, monkeypatch):
+    monkeypatch.setattr(routes.settings, "decision_support_only", False)
     with db() as session:
         session.add(Approval(id='APR-TEST', investigation_id='INV-TEST', action='rollback_deployment', environment='prod', risk='HIGH'))
         session.commit()
@@ -85,6 +86,7 @@ def test_approval_list_includes_investigation_context(db):
 
 
 def test_replayed_approval_returns_conflict(api, db, monkeypatch):
+    monkeypatch.setattr(routes.settings, "decision_support_only", False)
     with db() as session:
         session.add(Approval(id='APR-API', investigation_id='INV-API', action='review_release', environment='prod', risk='HIGH'))
         session.commit()

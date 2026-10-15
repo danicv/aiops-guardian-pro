@@ -22,6 +22,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://guardian:guardian@postgres:5432/guardian
       SMTP_HOST: mailpit
       PROMETHEUS_URL: http://prometheus:9090
+      DECISION_SUPPORT_ONLY: "true"
     ports: ["8000:8000"]
     depends_on:
       postgres:
@@ -32,6 +33,8 @@ services:
     build:
       context: .
       dockerfile: mcp-server/Dockerfile
+    environment:
+      DECISION_SUPPORT_ONLY: "true"
     ports: ["8001:8001"]
 
   frontend:

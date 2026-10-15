@@ -75,7 +75,7 @@ A displayed `Unknown`, `Unavailable`, or chart gap means Guardian did not receiv
 3. Open a returned investigation ID to inspect the generated evidence and workflow. Any associated approval is also shown in the result.
 4. Use the synthetic case library as historical training context. It contains fictional examples and does not describe the current service.
 
-Simulator records are saved in investigation history and may create approval records. They are labeled as synthetic, but they can appear in shared dashboard counts and lists. Do not mistake them for live incidents. Running the simulator does not intentionally change the demo service or production systems.
+Simulator records are saved in investigation history and are labeled as synthetic, but they can appear in shared dashboard counts and lists. In the default decision-support mode, mutation recommendations are blocked and no approval record is created. Do not mistake simulated records for live incidents; running the simulator does not change the demo service or production systems.
 
 ## Review investigations and approvals
 

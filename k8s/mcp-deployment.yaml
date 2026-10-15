@@ -47,6 +47,9 @@ spec:
           image: YOUR_ACR.azurecr.io/guardian-mcp:1.0.0
           ports:
             - containerPort: 8001
+          env:
+            - name: DECISION_SUPPORT_ONLY
+              value: "true"
         - name: otel-collector
           image: otel/opentelemetry-collector-contrib:latest
           args: ["--config=/etc/otelcol/config.yaml"]

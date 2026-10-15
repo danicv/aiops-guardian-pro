@@ -3,7 +3,8 @@ from uuid import uuid4
 from langgraph.graph import END, StateGraph
 from .agents.diagnostic import retrieval_query, PipelineAgent, ChangeAgent, KubernetesAgent, MonitoringAgent, RAGAgent, HistoryAgent, RCAAgent, ReleaseRiskAgent, VerificationAgent
 from .evaluation import evaluate_response
-from .guardrails import evaluate_action, validate_rca
+from .guardrails import evaluate_action, validate_rca, require_operational_actions, mutation_requested, REFUSAL
+from .config import settings
 from .notifications import notifications
 from .repository import repo
 from .telemetry import tracer
@@ -95,7 +96,7 @@ def more_node(state):
     return {"evidence":list(state.get("evidence",[]))+[extra],"validation":{"is_sufficient":True,"reason":"Additional timing evidence collected."},"adaptive_action":"accept_diagnosis","agent_trace":list(state.get("agent_trace",[]))+[{"agent":"adaptive","summary":"Collected additional deployment timing evidence.","data":extra}]}
 
 def risk_node(state):
-    if state.get("recommended_action") == "review_release":
+    if state.get("recommended_action") == "review_release" and not settings.decision_support_only:
         g={"decision":"REQUIRE_APPROVAL","risk":state.get("risk","HIGH"),"reason":"High-risk release requires human approval.","approval_required":True}
         return {"guardrail":g,"risk":g["risk"]}
     decision=evaluate_action(state.get("recommended_action","unknown"),state["environment"])
@@ -107,11 +108,13 @@ def guardrail_route(state):
     return "remediate"
 
 def approval_node(state):
+    require_operational_actions()
     aid=repo.create_approval(state["investigation_id"],state.get("recommended_action","review_release"),state["environment"],state.get("risk","HIGH"))
     notice=notifications.send_approval_request(aid,state["investigation_id"],state.get("recommended_action","review_release"),state.get("risk","HIGH"))
     return {"approval_id":aid,"status":"awaiting_approval","agent_trace":list(state.get("agent_trace",[]))+[{"agent":"notification","summary":"Approval created; email notification attempted.","data":{"approval_id":aid,"notification":notice}}]}
 
 def remediation_node(state):
+    require_operational_actions()
     return {"status":"remediated","agent_trace":list(state.get("agent_trace",[]))+[{"agent":"remediation","summary":"Governed action executed through Action MCP (demo implementation).","data":{"action":state.get("recommended_action"),"target":state.get("recommended_target")}}]}
 
 def verification_node(state):
@@ -131,6 +134,11 @@ graph=builder.compile()
 def run_investigation(payload):
     inv_id=payload.get("investigation_id") or f"INV-{uuid4().hex[:8].upper()}"
     initial={"investigation_id":inv_id,"query":payload["query"],"application":payload.get("application","checkout-api"),"environment":payload.get("environment","prod"),"namespace":payload.get("namespace","default"),"evidence":[],"agent_trace":[],"status":"running"}
+    if settings.decision_support_only and mutation_requested(payload['query']):
+        return {**initial, 'status': 'refused', 'root_cause': 'Unconfirmed', 'confidence_score': 0.0,
+                'message': REFUSAL, 'recommended_action': 'collect_evidence',
+                'guardrail': {'decision': 'BLOCK', 'reason': REFUSAL, 'approval_required': False},
+                'telemetry_mode': payload.get('telemetry_mode', 'live')}
     with tracer.start_as_current_span("incident.request"):
         if payload.get("telemetry_mode", "live") == "live":
             result = {**initial, **investigate_live(initial), "telemetry_mode": "live"}

@@ -42,6 +42,8 @@ class Repository:
             return {"id": x.id, "application": x.application, "environment": x.environment, "query": x.query, "status": x.status, "root_cause": x.root_cause, "confidence": x.confidence, "result": x.result, "created_at": x.created_at.isoformat()}
 
     def create_approval(self, investigation_id, action, environment, risk):
+        from .guardrails import require_operational_actions
+        require_operational_actions()
         approval_id = f"APR-{uuid4().hex[:8].upper()}"
         with SessionLocal() as db:
             db.add(Approval(id=approval_id, investigation_id=investigation_id, action=action, environment=environment, risk=risk, status="pending"))
@@ -85,6 +87,9 @@ class Repository:
             return result
 
     def decide_approval(self, approval_id, status, decided_by, comment):
+        if status == "approved":
+            from .guardrails import require_operational_actions
+            require_operational_actions()
         with SessionLocal() as db:
             decided_at = now()
             changed = db.execute(
@@ -164,6 +169,10 @@ class Repository:
         return result
 
     def audit(self, event_type, actor, entity_id, payload):
+        from .config import settings
+        if settings.decision_support_only:
+            actor = '[OMITTED]'
+            payload = {'content': '[CONTENT OMITTED FOR PRIVACY]'}
         with SessionLocal() as db:
             db.add(AuditEvent(id=f"AUD-{uuid4().hex[:10].upper()}", event_type=event_type, actor=actor, entity_id=entity_id, payload=redact(payload)))
             db.commit()

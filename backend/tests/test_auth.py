@@ -45,6 +45,7 @@ def test_viewer_can_read_but_cannot_approve(monkeypatch):
 
 
 def test_approver_can_approve(monkeypatch):
+    monkeypatch.setattr(settings, "decision_support_only", False)
     http = client(monkeypatch)
     monkeypatch.setattr(routes.repo, "decide_approval", lambda *args: {"id": "APR-1", "action": "review_release", "environment": "prod", "status": "approved"})
     monkeypatch.setattr(routes, "execute_approved_action", lambda approval: {"status": "executed"})

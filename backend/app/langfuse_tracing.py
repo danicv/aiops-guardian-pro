@@ -4,6 +4,7 @@ import os
 from threading import Lock
 
 from .config import settings
+from .redaction import private_trace_mask
 
 logger = logging.getLogger(__name__)
 _client = None
@@ -35,8 +36,19 @@ def create_langfuse_callback():
                         secret_key=settings.langfuse_secret_key,
                         host=settings.langfuse_host.rstrip("/"),
                         environment=settings.app_env,
+                        mask=private_trace_mask,
                     )
-        return CallbackHandler(
+        class PrivateCallback(CallbackHandler):
+            # The SDK mask covers input/output/metadata, but not status_message.
+            def on_chain_error(self, error, **kwargs):
+                return super().on_chain_error(RuntimeError('Operation failed; details omitted'), **kwargs)
+            def on_llm_error(self, error, **kwargs):
+                return super().on_llm_error(RuntimeError('Model failed; details omitted'), **kwargs)
+            def on_tool_error(self, error, **kwargs):
+                return super().on_tool_error(RuntimeError('Tool failed; details omitted'), **kwargs)
+            def on_retriever_error(self, error, **kwargs):
+                return super().on_retriever_error(RuntimeError('Retrieval failed; details omitted'), **kwargs)
+        return PrivateCallback(
             public_key=settings.langfuse_public_key,
         )
     except Exception:

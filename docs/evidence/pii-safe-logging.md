@@ -16,3 +16,12 @@ Audit record payload stored in the database:
 ```
 
 Sensitive values found in either: **none**.
+
+The logger redaction hook now also removes exception/stack details and masks
+structured `extra` fields before handlers receive the record. Langfuse applies
+a content mask that replaces arbitrary input/output/metadata with
+`[CONTENT OMITTED FOR PRIVACY]`. The OpenTelemetry exporter strips all span
+attributes, events, resource values, and status descriptions, retaining only
+operation timing/status. These paths are covered by
+`backend/tests/test_submission_safety.py` and
+`backend/tests/test_langfuse_tracing.py`; run `make test`.

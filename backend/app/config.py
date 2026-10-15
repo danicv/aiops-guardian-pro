@@ -18,6 +18,9 @@ def load_mounted_secrets(path: str = "/var/secrets") -> None:
 load_mounted_secrets()
 
 class Settings(BaseSettings):
+    decision_support_only: bool = True
+    conversation_retention_days: int = Field(default=30, ge=1, le=365)
+    conversation_cleanup_seconds: int = Field(default=3600, ge=60)
     app_env: str = "local"
     demo_mode: bool = True
     demo_data_enabled: bool = False

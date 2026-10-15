@@ -8,9 +8,10 @@ from ..orchestrator import run_investigation
 from ..repository import repo
 from ..incident_cases import incident_case_stats, seed_demo_cases
 from ..config import settings
+from ..guardrails import REFUSAL
 from ..feedback import record_feedback
 from ..auth import approver, viewer
-from ..conversations import start_conversation, continue_conversation, get_conversation, list_conversations
+from ..conversations import start_conversation, continue_conversation, get_conversation, list_conversations, delete_conversation
 from ..schemas import ConversationCreate, ConversationMessage
 from ..remediation_service import execute_approved_action
 from ..schemas import CaseFeedbackRequest, ApprovalDecision, DemoCaseSeedRequest, DemoSimulationRequest, IntegrationCreate, InvestigationRequest, NotificationRequest, ReleaseRiskRequest
@@ -80,6 +81,8 @@ def approvals(): return repo.list_approvals()
 
 @router.post("/approvals/{approval_id}/approve", dependencies=[approver])
 def approve(approval_id, decision: ApprovalDecision):
+    if settings.decision_support_only:
+        raise HTTPException(403, REFUSAL)
     try:
         result=repo.decide_approval(approval_id,"approved",str(decision.decided_by),decision.comment)
     except ValueError as error:
@@ -143,7 +146,10 @@ def report_telemetry(application: str = Query(default='checkout-api', min_length
     return telemetry_report({'application': application, 'environment': environment, 'namespace': namespace}, window_minutes)
 
 @router.post("/notifications/email", dependencies=[approver])
-def send_email(request: NotificationRequest): return notifications.send_email(str(request.to),request.subject,request.body)
+def send_email(request: NotificationRequest):
+    if settings.decision_support_only:
+        raise HTTPException(403, REFUSAL)
+    return notifications.send_email(str(request.to),request.subject,request.body)
 
 @router.get("/pipelines", dependencies=[viewer])
 def pipelines():
@@ -166,3 +172,7 @@ def conversation(conversation_id: str):
 @router.post("/conversations/{conversation_id}/messages", dependencies=[viewer])
 def conversation_message(conversation_id: str, request: ConversationMessage):
     return continue_conversation(conversation_id, request)
+
+@router.delete("/conversations/{conversation_id}", dependencies=[viewer])
+def forget_conversation(conversation_id: str):
+    return delete_conversation(conversation_id)

@@ -11,14 +11,14 @@ Reduce time-to-diagnosis for production incidents **without** letting an AI syst
 |---|---|
 | Queries live Prometheus/Loki for the scoped service and reports only what was measured | Treat missing data as healthy, or infer a cause from metrics alone |
 | Retrieves similar past incidents and runbooks as *precedents*, labelled synthetic | Present a precedent's cause as confirmed for the current incident |
-| Proposes an action and passes it through deterministic guardrails | Execute anything; the LLM has no tool that mutates the cluster |
-| Holds risky actions for a named human approval with full context | Auto-approve production changes |
+| Explains risk and suggests read-only checks | Execute or approve infrastructure changes |
+| Deterministically refuses mutation requests in decision-support mode | Create approval requests or send action notifications |
 | Labels simulated/demo data as simulated | Mix demo and live evidence |
 
 ## Success criteria
 1. When a fault is injected, Guardian detects it from live metrics within one scrape window.
 2. With thin evidence it answers "unconfirmed" and asks for the next check, instead of guessing (confidence 0, `collect_evidence`).
-3. Every state-changing action in production is `REQUIRE_APPROVAL`; prohibited and unknown actions are `BLOCK`.
+3. In the submitted decision-support configuration, every infrastructure mutation is refused before tool invocation; prohibited and unknown actions remain `BLOCK`.
 4. Retrieval puts the correct precedent first for labelled scenarios (`backend/tests/test_retrieval_quality.py`).
 5. Every answer is traceable: agent trace, evidence list, PromQL used, Langfuse trace.
 
@@ -27,6 +27,7 @@ Autonomous remediation, replacing the incident commander, learning policy at run
 
 ## Key design decisions
 - **Safety is deterministic, not prompt-based.** The policy (`backend/app/guardrails.py`) is plain code. Prompts are a second layer; see `docs/evidence/prompt-comparison.md` for why that matters with a small local model.
+- **Privacy is fail-closed for telemetry.** Langfuse payloads are omitted and OpenTelemetry exports contain operation timing/status only; logs redact messages, exceptions, and structured fields.
 - **Local first.** kind + Ollama (`qwen2.5:1.5b`) so the full loop runs with no API key; any OpenAI-compatible endpoint can replace it.
 - **Honest uncertainty.** Live mode returns `insufficient_data` / `needs_review` rather than a fabricated RCA.
 
@@ -35,4 +36,5 @@ Autonomous remediation, replacing the incident commander, learning policy at run
 - The 1.5B local model is weak at following refusal instructions (measured, see prompt comparison).
 - Retrieval is keyword-based by default. Embedding retrieval (`EMBEDDING_BASE_URL` + `EMBEDDING_MODEL`, e.g. Ollama `nomic-embed-text`) is opt-in; it reached 7/8 vs 4/8 top-1 on paraphrased queries (`docs/evidence/embedding-retrieval.md`) but the corpus is still 34 synthetic cases.
 - Feedback ratings are global per case, not per user or service, and have no UI yet (`POST /api/feedback`).
-- Redaction is pattern-based (email, IP, phone, card, tokens, `password=`); it will not catch names or free-form identifiers. Langfuse traces are not redacted.
+- Conversation retention is 30 days since last activity by default, with hourly/on-access cleanup and an immediate delete endpoint.
+- Pattern-based redaction alone cannot identify every name or free-form identifier; traces therefore omit arbitrary content rather than relying only on patterns.

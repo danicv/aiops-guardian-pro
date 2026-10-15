@@ -15,6 +15,8 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import settings
+from .guardrails import mutation_requested, REFUSAL
+from .evaluation import response_violations
 from .langfuse_tracing import create_langfuse_callback, flush_langfuse_callback
 
 
@@ -72,8 +74,10 @@ If refresh_metrics is true, retain the current pending question; the refresh
 request is not an answer to it. Context updates must be exact quotes from user
 messages. Keep existing context unless the user explicitly corrects it. Never
 execute tools, approve changes, or claim that an action/instrumentation install
-was performed. Suggest checks and conditional mitigations with verification,
-without asserting a specific rollback/version/resource setting is proven safe.
+was performed. In decision-support mode, do not recommend, instruct, or provide
+commands for infrastructure mutations. Suggest only read-only checks and
+verification steps; if asked for a change, refuse and direct the user to their
+authorized incident lead and operational process.
 Retrieved incident cases are synthetic historical precedents, not evidence about
 the current service. Compare symptoms and metrics, explain where the match is
 similar or different, and do not treat a precedent's cause or remediation as
@@ -181,7 +185,7 @@ def _advice(focus):
     return {
         "memory": (
             "Check pod termination reasons and restart timestamps, then compare memory working set with configured limits. "
-            "An OOM is a hypothesis until pod events confirm it. If a limit change coincides with confirmed OOMs, review restoring a previously validated limit or version; verify restarts and request metrics afterward.",
+            "An OOM is a hypothesis until pod events confirm it. Compare the timing of any reported limit change with termination events and request metrics.",
             "What termination reason and timestamp do the affected pod events show?",
         ),
         "latency": (
@@ -191,12 +195,12 @@ def _advice(focus):
         ),
         "errors": (
             "Group failing requests by route and status and inspect an example error with its trace ID at the reported onset. "
-            "Compare the failing dependency and deployment version against successful requests. Validate that correlation before proposing a rollback or dependency change.",
+            "Compare the failing dependency and deployment version against successful requests. Record the correlation as a hypothesis until independent evidence confirms it.",
             "What is the dominant error message or failing dependency for an affected request?",
         ),
         "change": (
             "Compare the reported change timestamp with the first affected requests and inspect the actual version/configuration diff. "
-            "If only the changed version is failing while the prior version remains healthy, review a rollback against your runbook and compatibility requirements; verify recovery in metrics afterward. Timing alone does not prove causality.",
+            "Compare the same metrics before and after the reported change. Timing alone does not prove causality; record the diff and ask the incident lead to review it.",
             "What changed in the relevant version or configuration diff?",
         ),
         "burn": (
@@ -213,7 +217,7 @@ def _advice(focus):
         ),
         "general": (
             "Align the reported onset with request metrics, deployment history and an affected request's logs or trace. "
-            "Compare an affected route or instance with an unaffected one to narrow the failure domain. Choose a mitigation only after the proposed cause has a confirming check.",
+            "Compare an affected route or instance with an unaffected one to narrow the failure domain. Keep any proposed cause explicitly unconfirmed until a check supports it.",
             "What did the first check reveal in the affected request's logs, traces, or pod events?",
         ),
     }[focus]
@@ -293,6 +297,9 @@ def _llm_reply(messages, context, result, scope, refreshing, deferred):
         answer = ConversationReply.model_validate(answer)
     if not answer.content.strip() or len(answer.content) > 12000:
         raise ValueError("Invalid conversation response")
+    if response_violations(answer.content, simulated=scope.get('telemetry_mode') == 'demo',
+                           unconfirmed='unconfirmed' in str(result.get('root_cause', '')).lower()):
+        raise ValueError('Model response contradicts the evidence or execution policy')
     # Only literal user text may augment reports. Never accept invented scope,
     # evidence, original_problem, or arbitrary context keys from the model.
     user_messages = [str(m.get("content", "")) for m in messages if m.get("role") == "user"]
@@ -322,6 +329,9 @@ def _llm_reply(messages, context, result, scope, refreshing, deferred):
 def build_reply(messages: list[dict], context: dict, result: dict, scope: dict) -> dict:
     """Reply without mutating inputs, losing original scope, or taking actions."""
     updated, latest, refreshing, deferred = _prepare_context(messages, context)
+    if settings.decision_support_only and mutation_requested(latest):
+        return {'content': REFUSAL, 'question': None, 'context': updated,
+                'assistant_mode': 'guided', 'notice': 'Deterministic policy refusal; no model or action tool invoked.'}
     if settings.openai_api_key.strip() or settings.llm_base_url.strip():
         try:
             return _llm_reply(messages, deepcopy(updated), result, scope, refreshing, deferred)

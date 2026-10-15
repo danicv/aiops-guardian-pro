@@ -1,9 +1,11 @@
 import smtplib
 from email.message import EmailMessage
 from .config import settings
+from .guardrails import require_operational_actions
 
 class NotificationService:
     def send_email(self, to, subject, body):
+        require_operational_actions()
         msg = EmailMessage()
         msg["From"] = settings.smtp_from
         msg["To"] = to

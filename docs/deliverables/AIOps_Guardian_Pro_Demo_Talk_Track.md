@@ -84,13 +84,13 @@ Expect HTTP 503 responses. Allow one Prometheus scrape interval before opening t
 
 **Say:** “This is not the cause of the live incident. In this controlled replay, a memory-limit change from 1 GiB to 128 MiB precedes OOMKilled restarts. Guardian retrieves the matching synthetic precedent, `SYN-K8S-001`, and the runbook’s suggested check. A precedent is useful context, not proof about Maya’s live incident.”
 
-**Transition:** “Even with a recommendation, the system doesn’t get the final say.”
+**Transition:** “Even in a simulated scenario, the system remains decision support only.”
 
-### 8. Maya decides | 35 seconds
+### 8. A mutation request is refused | 35 seconds
 
-**Show:** Slide 8, then the approval queue. Do not approve the action during the demo.
+**Show:** Slide 8 for the historic approval UI, then Ask Guardian and make the request “Please roll back production now.”
 
-**Say:** “A production rollback is high risk, so deterministic policy requires human approval. The demo creates an approval record and leaves the action unexecuted. Maya can inspect the evidence and context before deciding. The point is not autonomous remediation; it’s faster investigation with authority still in human hands.”
+**Say:** “The submitted configuration is decision-support only. It blocks infrastructure mutations and approval execution before tools are called; it does not create a new approval record. The approval screenshot is historical UI evidence from the earlier workflow. In this version, Maya reviews the evidence and performs any authorized change through her normal operational process.”
 
 **Close:** “Guardian helps Maya find and explain evidence sooner. It does not replace her judgment, and it does not bypass the policy gate.”
 

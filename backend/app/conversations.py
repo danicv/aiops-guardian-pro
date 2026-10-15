@@ -1,21 +1,43 @@
 """Persisted, read-only SRE conversations with optimistic turn concurrency."""
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
+from .config import settings
 
 from .db import SessionLocal
 from .models import Conversation
 from .live_telemetry import investigate_live
 from .conversation_engine import build_reply
 from .incident_cases import retrieve_cases
+from .guardrails import mutation_requested, REFUSAL
 
 MAX_MESSAGES = 60
 
 
 def utcnow():
     return datetime.now(timezone.utc)
+
+
+def retention_cutoff():
+    return utcnow() - timedelta(days=settings.conversation_retention_days)
+
+
+def purge_expired_conversations():
+    with SessionLocal() as db:
+        count = db.execute(delete(Conversation).where(Conversation.updated_at <= retention_cutoff())).rowcount
+        db.commit()
+        return count
+
+
+def delete_conversation(conversation_id):
+    with SessionLocal() as db:
+        count = db.execute(delete(Conversation).where(Conversation.id == conversation_id)).rowcount
+        db.commit()
+    if not count:
+        raise HTTPException(404, 'Conversation not found')
+    return {'deleted': True}
 
 
 def timestamp(value):
@@ -30,6 +52,7 @@ def serialize(row):
 
 
 def get_conversation(conversation_id):
+    purge_expired_conversations()
     with SessionLocal() as db:
         row = db.get(Conversation, conversation_id)
         if row is None:
@@ -38,6 +61,7 @@ def get_conversation(conversation_id):
 
 
 def list_conversations():
+    purge_expired_conversations()
     with SessionLocal() as db:
         rows = db.scalars(select(Conversation).order_by(Conversation.updated_at.desc()).limit(50)).all()
         return [{key: getattr(row, key) for key in (
@@ -71,9 +95,19 @@ def assistant_message(reply):
 
 
 def start_conversation(request):
+    purge_expired_conversations()
     scope = request.model_dump(exclude={'message'})
     messages = [user_message(request.message)]
-    result = collect_snapshot(scope, request.message)
+    if settings.decision_support_only and mutation_requested(request.message):
+        result = {
+            'status': 'refused', 'root_cause': 'Unconfirmed', 'confidence_score': 0.0,
+            'evidence': [], 'similar_incidents': [], 'telemetry_mode': scope['telemetry_mode'],
+            'telemetry_notice': REFUSAL,
+            'guardrail': {'decision': 'BLOCK', 'reason': REFUSAL, 'approval_required': False},
+            'snapshot_at': utcnow().isoformat(),
+        }
+    else:
+        result = collect_snapshot(scope, request.message)
     reply = build_reply(messages, {}, result, scope)
     messages.append(assistant_message(reply))
     with SessionLocal() as db:
@@ -95,7 +129,8 @@ def continue_conversation(conversation_id, request):
     messages = [*current['messages'], user_message(request.message)]
     context = dict(current['context'])
     result = current['result']
-    if request.refresh_metrics:
+    refused = settings.decision_support_only and mutation_requested(request.message)
+    if request.refresh_metrics and not refused:
         result = collect_snapshot(scope, context.get('original_problem', current['messages'][0]['content']))
         context['_refresh_metrics'] = True
     reply = build_reply(messages, context, result, scope)
@@ -103,7 +138,8 @@ def continue_conversation(conversation_id, request):
     messages.append(assistant_message(reply))
     with SessionLocal() as db:
         saved = db.execute(update(Conversation).where(
-            Conversation.id == conversation_id, Conversation.revision == request.expected_revision
+            Conversation.id == conversation_id, Conversation.revision == request.expected_revision,
+            Conversation.updated_at > retention_cutoff()
         ).values(messages=messages, context=clean_context, result=result,
                  revision=request.expected_revision+1, updated_at=utcnow()))
         if saved.rowcount != 1:

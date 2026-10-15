@@ -167,7 +167,7 @@ DATABASE_URL=postgresql+psycopg2://guardian:guardian@localhost:5432/guardian \
 
 ## Primary demo
 
-The demo changes `checkout-api` memory from `1Gi` to `128Mi`. Guardian correlates the deployment, OOMKilled events, restarts, 5xx, latency, runbook guidance, and a similar historical incident. It generates RCA, recommends rollback, triggers the production approval guardrail, sends an approval notification, and preserves the audit trail.
+The demo scenario uses labelled synthetic evidence for a `checkout-api` memory reduction from `1Gi` to `128Mi`, alongside read-only telemetry. In the default `DECISION_SUPPORT_ONLY=true` mode, Guardian can explain the evidence and suggest checks but refuses rollback, restart, scale, approval, or notification requests. No infrastructure mutation is executed or queued for approval.
 
 See `demo/README.md`.
 

@@ -6,7 +6,9 @@ def test_runtime_flow(monkeypatch):
     monkeypatch.setattr(notifications, "send_approval_request", lambda *args: {"status": "suppressed"})
     r=run_investigation({"telemetry_mode":"demo","investigation_id":"INV-TEST","query":"Why is checkout-api failing after today's deployment?","application":"checkout-api","environment":"prod","namespace":"default"})
     assert r["confidence_score"]>=0.75
-    assert r["guardrail"]["approval_required"] is True
+    assert r["guardrail"]["approval_required"] is False
+    assert r["guardrail"]["decision"] == "BLOCK"
+    assert "approval_id" not in r
 
     assert len(r["sre_metrics"]) == 4
     assert [step["step"] for step in r["action_plan"]] == ["Contain", "Remediate", "Verify"]

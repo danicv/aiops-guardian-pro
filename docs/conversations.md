@@ -37,6 +37,12 @@ Conversations never execute infrastructure commands, grant approvals, or send
 notifications. Demo conversations use explicitly labelled sample evidence and
 also bypass the demo action/approval graph.
 
+Saved conversations expire after 30 days of inactivity by default. Configure
+`CONVERSATION_RETENTION_DAYS` (1–365) to change the period. Expired rows are
+purged hourly by default and when conversation lists/details are accessed or a
+new conversation starts. Use `DELETE /api/conversations/{id}` to delete one
+immediately. Deletion is final; an in-flight response cannot recreate the row.
+
 ## API
 
 - `POST /api/conversations`: `message`, `application`, `environment`, `namespace`,
@@ -45,6 +51,7 @@ also bypass the demo action/approval graph.
 - `GET /api/conversations/{id}`: complete conversation, context, and current snapshot.
 - `POST /api/conversations/{id}/messages`: `message`, `expected_revision`, and
   optional `refresh_metrics`. Returns the new complete conversation.
+- `DELETE /api/conversations/{id}`: immediately deletes the saved conversation.
 
 Revisions start at one and increment per exchange. A stale or concurrent write
 returns HTTP 409; reload before retrying. Messages are limited to 4,000 characters

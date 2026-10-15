@@ -9,6 +9,12 @@ spec:
       containers:
         - name: backend
           env:
+            - name: DECISION_SUPPORT_ONLY
+              value: "true"
+            - name: CONVERSATION_RETENTION_DAYS
+              value: "30"
+            - name: CONVERSATION_CLEANUP_SECONDS
+              value: "3600"
             - name: DATABASE_URL
               value: postgresql+psycopg2://guardian:guardian@postgres:5432/guardian
             - name: AUTH_REQUIRED

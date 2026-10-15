@@ -31,6 +31,9 @@ def test_callback_uses_self_hosted_project_credentials(monkeypatch):
         def __init__(self, **kwargs):
             captured.update(kwargs)
 
+        def on_chain_error(self, error, **kwargs):
+            captured["error"] = str(error)
+
     class LangfuseClient:
         def __init__(self, **kwargs):
             captured["client"] = kwargs
@@ -57,8 +60,12 @@ def test_callback_uses_self_hosted_project_credentials(monkeypatch):
             "secret_key": "sk-test",
             "host": "http://langfuse.internal",
             "environment": settings.app_env,
+            "mask": langfuse_tracing.private_trace_mask,
         },
     }
+    assert captured['client']['mask'](data={'input': 'Jane balance 999', 'output': 'private'}) == '[CONTENT OMITTED FOR PRIVACY]'
+    callback.on_chain_error(ValueError('Jane balance 999'), run_id='test')
+    assert 'Jane' not in captured['error']
     assert __import__("os").environ["LANGFUSE_HOST"] == "http://langfuse.internal"
     assert __import__("os").environ["LANGFUSE_SECRET_KEY"] == "sk-test"
 
@@ -74,7 +81,8 @@ def test_flush_is_optional_and_failure_does_not_raise(caplog):
         client = BrokenClient()
 
     flush_langfuse_callback(BrokenCallback())
-    assert "Could not flush Langfuse" in caplog.text
+    assert caplog.records[-1].levelname == "ERROR"
+    assert "offline" not in caplog.text
 
 
 def test_demo_graph_receives_and_flushes_langfuse_callback(monkeypatch):

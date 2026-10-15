@@ -50,7 +50,7 @@ def test_log_records_are_redacted(caplog):
     install_log_redaction()
     with caplog.at_level(logging.WARNING):
         logging.getLogger("guardian.test").warning("failed for %s", "bob@example.com")
-    assert "bob@example.com" not in caplog.text and "[REDACTED_EMAIL]" in caplog.text
+    assert "bob@example.com" not in caplog.text and "[CONTENT OMITTED FOR PRIVACY]" in caplog.text
 
 
 def test_semantic_retrieval_matches_paraphrase_that_lexical_misses(seeded, monkeypatch):
